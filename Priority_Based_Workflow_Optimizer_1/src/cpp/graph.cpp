@@ -1,4 +1,5 @@
 #include "graph.h"
+#include <iostream>
 
 Graph::Graph(int numberOfLocations)
 {
@@ -17,44 +18,49 @@ void Graph::addPath(int from, int to, int time)
 
 void Graph::showGraph()
 {
-    cout << "\n";
-    cout << "==============================\n";
-    cout << "       LOCATION GRAPH\n";
-    cout << "==============================\n";
+    std::cout << "==============================" << std::endl;
+    std::cout << "       LOCATION GRAPH" << std::endl;
+    std::cout << "==============================" << std::endl;
 
-    cout << "\nA = Department";
-    cout << "\nB = Library";
-    cout << "\nC = Canteen";
-    cout << "\nD = Lab\n";
+    std::cout << std::endl;
 
-    cout << "\nPaths:\n";
+    std::cout << "A = Department" << std::endl;
+    std::cout << "B = Library" << std::endl;
+    std::cout << "C = Canteen" << std::endl;
+    std::cout << "D = Lab" << std::endl;
 
-    cout << "A -> B = 5 minutes\n";
-    cout << "A -> C = 7 minutes\n";
-    cout << "B -> D = 4 minutes\n";
-    cout << "C -> D = 6 minutes\n";
+    std::cout << std::endl;
 
-    cout << "\nGraph using adjacency list:\n";
+    std::cout << "Paths:" << std::endl;
 
-    for (int i = 0; i < graph.size(); i++)
+    std::cout << "A -> B = 5 minutes" << std::endl;
+    std::cout << "A -> C = 7 minutes" << std::endl;
+    std::cout << "B -> D = 4 minutes" << std::endl;
+    std::cout << "C -> D = 6 minutes" << std::endl;
+
+    std::cout << std::endl;
+
+    std::cout << "Graph using adjacency list:" << std::endl;
+
+    for(int i = 0; i < graph.size(); i++)
     {
         char location = 'A' + i;
 
-        cout << location << " -> ";
+        std::cout << location << " -> ";
 
-        for (int j = 0; j < graph[i].size(); j++)
+        for(int j = 0; j < graph[i].size(); j++)
         {
             char destination = 'A' + graph[i][j].destination;
 
-            cout << destination
-                 << " (" << graph[i][j].time << " min)";
+            std::cout << destination;
+            std::cout << " (" << graph[i][j].time << " min)";
 
-            if (j < graph[i].size() - 1)
+            if(j < graph[i].size() - 1)
             {
-                cout << ", ";
+                std::cout << ", ";
             }
         }
 
-        cout << endl;
+        std::cout << std::endl;
     }
 }

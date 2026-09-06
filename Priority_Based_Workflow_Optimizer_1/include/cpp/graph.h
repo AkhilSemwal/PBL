@@ -3,7 +3,6 @@
 
 #include <iostream>
 #include <vector>
-using namespace std;
 
 struct Edge
 {
@@ -14,7 +13,7 @@ struct Edge
 class Graph
 {
 private:
-    vector<vector<Edge>> graph;
+    std::vector<std::vector<Edge>> graph;
 
 public:
     Graph(int numberOfLocations);
