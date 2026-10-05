@@ -1,132 +1,159 @@
 # Priority Based Workflow Optimizer for Efficient Time Utilization
 
-> **Turning dead time between fixed commitments into mathematically optimized, planned time.**
+A C++ console application that decides which pending tasks a student should do in the free periods of a college day. It selects tasks using their **priority**, **duration**, **prerequisites**, the **remaining capacity** of each free slot, and the **walking time** between campus locations.
 
-**Priority Based Workflow Optimizer for Efficient Time Utilization** bridges physical campus spatial topology with temporal constraint optimization. Built in standard **C99** (core data structures & algorithms) and **C++17** (object-oriented application logic) with **zero external dependencies**.
+Built in **C++17**. The binary heap / priority queue is implemented from scratch without STL.
 
 ---
 
-## 1. Features & Architecture
+## 1. Features
+
+- Task dependency graph with **DFS cycle detection**
+- **Topological ordering** of tasks using Kahn's algorithm with a priority queue
+- Free slot extraction from the daily timetable (classes and labs are never used)
+- **Dijkstra** shortest walking time between campus locations
+- Usable time per slot after subtracting walking time
+- **Greedy** priority-based scheduler
+- **0/1 Knapsack DP** scheduler for optimal task selection per slot
+- Greedy vs DP comparison on the same input
+- Report with scheduled tasks, deferred tasks, time utilization and achieved priority
+- Interactive console menu
+
+---
+
+## 2. Team
+
+| Member | Responsibility |
+|---|---|
+| Akhil Semwal (Lead) | Integration, common data model, heap & heap sort, console app, build system |
+| Priyanshu Gairola | Greedy workflow optimizer, Dijkstra shortest walking time |
+| Samriddhi | Task dependency graph, DFS cycle detection, topological sort, campus location graph |
+| Piyush | Task manager, schedule manager, 0/1 knapsack DP, greedy vs DP comparison |
+
+---
+
+## 3. Project Structure
 
 ```text
-Priority Based Workflow Optimizer for Efficient Time Utilization Architecture
-├── include/
-│   ├── c/                  # Pure C data structure headers
-│   │   ├── linked_list.h   # Singly-linked list for hash table buckets
-│   │   ├── hash_table.h    # 64-bit FNV-1a hash map with separate chaining
-│   │   ├── priority_queue.h# Indexed binary min-heap (O(log V) decrease-key)
-│   │   ├── graph.h         # Adjacency-list weighted undirected graph
-│   │   ├── dijkstra.h      # Shortest path solver with per-source memoization
-│   │   ├── sorting.h       # Stable top-down merge sort (O(n log n))
-│   │   └── searching.h     # Binary search & lower bound
-│   └── cpp/                # C++ OOP application headers
-│       ├── Location.h      # Campus vertex representation & tag matching
-│       ├── Task.h          # Knapsack item (minutes, priority, venue constraints)
-│       ├── FixedActivity.h # Mandatory fixed commitments (classes, labs)
-│       ├── Schedule.h      # Timeline sweep & gap extraction
-│       ├── RouteManager.h  # Graph & Dijkstra C++ bridge
-│       ├── TaskManager.h   # Flexible task pool & venue filtering
-│       ├── TimeOptimizer.h # 0/1 knapsack DP, greedy, & brute-force oracle
-│       ├── Itinerary.h     # Optimized plan data structures
-│       ├── FileManager.h   # Line-level diagnostic parser for data files
-│       └── PriorityBasedWorkflowOptimizerSystem.h # Top-level orchestrator & interactive CLI
+Priority_Based_Workflow_Optimizer/
+├── Makefile
+├── README.md
+├── include/cpp/
+│   ├── task.h               # Task and TimeSlot definitions (shared by all modules)
+│   ├── heap.h               # Binary heap / priority queue + heap sort (no STL)
+│   ├── task_manager.h       # Add, find and list tasks
+│   ├── schedule_manager.h   # Manage time slots and capacity
+│   ├── task_graph.h         # Task dependencies, DFS cycle detection, topological sort
+│   ├── location_graph.h     # Campus locations and walking paths
+│   ├── optimizer.h          # Greedy priority-based scheduler
+│   ├── dijkstra.h           # Shortest walking time between locations
+│   ├── knapsack.h           # 0/1 knapsack DP scheduler
+│   └── workflow_app.h       # Interactive console menu
 ├── src/
-│   ├── c/                  # Pure C implementations
-│   ├── cpp/                # C++ OOP implementations
-│   └── main.cpp            # Application entry point
+│   ├── main.cpp
+│   └── cpp/                 # One .cpp file for each header above
 ├── data/
-│   ├── locations.txt       # Campus venues with capability tags
-│   ├── routes.txt         # Footpaths with walking durations (minutes)
-│   ├── schedule.txt       # Daily fixed commitments
-│   ├── tasks.txt           # Flexible tasks with priority points
-│   └── config.txt          # Planner configuration (safety buffer, min gap)
-├── docs/                   # Complete project documentation
-│   ├── architecture.md    # System design & layer separation
-│   ├── dsa_design.md      # Custom DSA implementation details & complexities
-│   ├── oop_design.md      # Class hierarchy & design patterns
-│   ├── optimization.md    # Mathematical knapsack formulation & proofs
-│   ├── algorithms.md      # Algorithmic pseudocode & Never-Late proof
-│   └── test_cases.md      # Automated testing suite & coverage
-└── tests/                  # Unit and verification tests
-    ├── test_hash_table.c
-    ├── test_priority_queue.c
-    ├── test_sorting.c
-    ├── test_graph.c
-    ├── test_dijkstra.c
-    └── test_optimizer.cpp
+│   ├── tasks.txt            # Pending tasks: id, name, priority, duration, venue, prerequisites
+│   ├── schedule.txt         # Daily timetable (classes and free periods)
+│   ├── locations.txt        # Campus venues
+│   └── routes.txt           # Walking paths with time in minutes
+└── docs/
 ```
 
 ---
 
-## 2. Quick Start & Build
+## 4. How It Works
 
-### Prerequisites
+```text
+Tasks + Timetable + Campus Map
+            │
+            ▼
+1. Dependency check        DFS cycle detection, topological order
+            │
+            ▼
+2. Free slot extraction    only free periods, classes and labs skipped
+            │
+            ▼
+3. Usable time             Dijkstra walking time subtracted from each slot
+            │
+            ▼
+4. Task selection          greedy or 0/1 knapsack DP per slot
+            │
+            ▼
+5. Report                  scheduled, deferred, utilization, achieved priority
+```
 
-* `gcc` and `g++` supporting C99 and C++17.
-* `make`.
+### Step 1: Dependency check
 
-### Build & Run
+Tasks and their prerequisites form a directed graph (adjacency list). DFS with three states (unvisited, visiting, done) detects circular dependencies, which are reported to the user. Kahn's algorithm then produces a valid order; a max-heap is used instead of a normal queue so that, among tasks that are ready, the highest priority one comes first.
+
+### Step 2: Free slot extraction
+
+Only periods marked as free in the timetable are given capacity. Class and lab periods are never assigned tasks.
+
+### Step 3: Usable time
+
+Campus locations form a weighted undirected graph. Dijkstra (with a min-heap) gives the shortest walking time between any two venues. For a task at venue `v`, between a commitment at `u` and the next at `w`:
+
+```
+Usable Time = Free Slot Duration − walk(u → v) − walk(v → w)
+```
+
+### Step 4: Task selection
+
+**Greedy:** for each slot, repeatedly pick the highest-priority task whose prerequisites are done and which fits in the remaining time.
+
+**0/1 Knapsack DP:** for each slot, capacity = usable minutes, weight = task duration, value = task priority. DP returns the subset with maximum total priority.
+
+Greedy is fast but not always optimal. Example with a 55-minute slot:
+
+| Approach | Tasks chosen | Total priority |
+|---|---|---|
+| Greedy | One 55-min task (priority 9) | 9 |
+| Knapsack DP | Two 25-min tasks (priority 6 + 5) | 11 |
+
+The application runs both on the same input and compares time utilization and achieved priority.
+
+### Step 5: Report
+
+- Total, scheduled and deferred tasks
+- Available, used and unused time
+- Time utilization (%)
+- Total and achieved priority (%)
+- List of deferred tasks with priority and duration
+
+---
+
+## 5. Data Structures & Complexity
+
+| Component | Data structure / algorithm | Time complexity |
+|---|---|---|
+| Heap push / pop | Binary heap (array-based) | O(log n) |
+| Heap top | Binary heap | O(1) |
+| Heap sort | In-place heap sort | O(n log n), O(1) extra space |
+| Cycle detection | DFS on adjacency list | O(V + E) |
+| Topological sort | Kahn's algorithm + max-heap | O(V log V + E) |
+| Shortest walking time | Dijkstra with min-heap (lazy deletion) | O(E log E) |
+| Greedy scheduler | Repeated selection per slot | O(S · n² log n) |
+| Knapsack scheduler | 0/1 knapsack DP | O(n · T) per slot |
+
+*n = tasks, S = slots, V / E = graph vertices / edges, T = slot capacity in minutes*
+
+---
+
+## 6. Build & Run
+
+**Requirements:** `g++` with C++17 support and `make`.
 
 ```bash
-# 1. Compile everything into bin/priority_workflow_optimizer
-make all
-
-# 2. Run the interactive console menu
-make run
-
-# 3. Print the optimized itinerary directly
-make plan
-
-# 4. Print the algorithmic complexity and DP vs Greedy benchmark report
-make report
-
-# 5. Run the full automated verification test suite
-make test
+make        # build
+make run    # run the console application
 ```
 
 ---
 
-## 3. The 4-Step Algorithmic Pipeline
+## 7. Team Workflow
 
-### 1. Timeline Sweep (Merge Sort + Interval Merge)
-
-Takes unsorted fixed events, sorts them in **O(n log n)** time, merges overlapping commitments in an **O(n)** sweep, and extracts idle gaps.
-
-### 2. Shortest-Path Spatial Transit (Dijkstra)
-
-Uses an indexed binary min-heap with **O(log V)** priority updates to compute minimum walking time between any pair of venues. Distances are memoized per source vertex.
-
-### 3. True Usable Time & Spatio-Temporal Venue Search
-
-For every idle gap between events at locations `u` and `w`, tests each campus venue `v`:
-
-$$
-\text{True Usable Time}
-=
-\text{GapDuration}
--
-\text{walk}(u,v)
--
-\text{walk}(v,w)
--
-\text{SafetyBuffer}
-$$
-
-This ensures that the time allocated to a task accounts for both the journey to the selected venue and the journey to the next fixed commitment.
-
-### 4. Multi-Criteria 0/1 Knapsack Dynamic Programming
-
-Fills the exact usable-time capacity at each venue with the optimal subset of eligible flexible tasks, beating greedy heuristics and guaranteeing the user is **never late** to subsequent commitments.
-
----
-
-## 4. Documentation
-
-For comprehensive technical documentation, refer to the `docs/` directory:
-
-* **Architecture & Data Flow** — `docs/architecture.md`
-* **Data Structures & Complexity Analysis** — `docs/dsa_design.md`
-* **OOP Design & Patterns** — `docs/oop_design.md`
-* **Optimization Model & Greedy Counterexamples** — `docs/optimization.md`
-* **Algorithms & Never-Late Proof** — `docs/algorithms.md`
-* **Test Strategy & Verification** — `docs/test_cases.md`
+1. Every member works on their own branch.
+2. Pull requests are reviewed and merged by the team lead.
+3. Each module is checked with sample inputs before merging.
