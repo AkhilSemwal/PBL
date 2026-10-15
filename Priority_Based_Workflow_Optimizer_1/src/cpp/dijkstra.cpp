@@ -74,7 +74,7 @@ DijkstraStatus DijkstraSolver::findPath(int sourceId, int destinationId, Shortes
         const RouteNode* route = lg_first_route(graph, current);
         while (route != nullptr) {
             int neighbour = route->toIndex;
-            /* Guard against integer overflow with absurdly large weights. */
+            //Guard against integer overflow with absurdly large weights.
             bool safeToAdd = route->walkingMinutes <= INFINITE_DISTANCE - 1 - distance[current];
             if (!finalised[neighbour] && safeToAdd) {
                 int candidate = distance[current] + route->walkingMinutes;
