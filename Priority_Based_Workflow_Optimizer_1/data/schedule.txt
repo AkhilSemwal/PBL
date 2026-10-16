@@ -1,0 +1,14 @@
+# Dummy Monday timetable. Every period is CLASS (never used for tasks) or FREE.
+# Format: PeriodID|Start(HH:MM)|End(HH:MM)|Name|Type|LocationID
+# A FREE period uses "-" as its location. Times are in 24-hour-format.
+# Gaps that are not listed (09:50-10:10 and 13:50-14:10) are breaks.
+1|08:00|08:55|OOPS with C++ Lab (PCS 307)|CLASS|4
+2|08:55|09:50|OOPS with C++ Lab (PCS 307)|CLASS|4
+3|10:10|11:05|Advanced Probability for AI (TCS 368)|CLASS|1
+4|11:05|12:00|Free Period|FREE|-
+5|12:00|12:55|Logic Design Lab (PCS 308)|CLASS|5
+6|12:55|13:50|Logic Design Lab (PCS 308)|CLASS|5
+7|14:10|15:05|Free Period|FREE|-
+8|15:05|16:00|Free Period|FREE|-
+9|16:00|16:55|Free Period|FREE|-
+10|16:55|17:50|Free Period|FREE|-
