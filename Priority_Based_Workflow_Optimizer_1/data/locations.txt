@@ -1,0 +1,10 @@
+# Predefine/Dummy Campus locations
+# Format: LocationID|LocationName
+1|Department Block
+2|Library
+3|Canteen
+4|Computer Lab
+5|Electronics Lab
+6|Admin Office
+7|Seminar Hall
+8|Research Block
