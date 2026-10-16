@@ -211,6 +211,7 @@ void tg_display(const TaskGraph* graph)
         printf("\n");
     }
 }
+<<<<<<< HEAD:Priority_Based_Workflow_Optimizer_1/src/cpp/graph.cpp
 
 /*
  * One step of DFS, written with recursion.
@@ -333,3 +334,5 @@ const char* tg_status_message(TaskGraphStatus status)
     }
     return "unknown status";
 }
+=======
+>>>>>>> 9f60cbd779cfdd7ba39f212916e296a1cb0b9cb5:Priority_Based_Workflow_Optimizer_1/src/cpp/task_graph.cpp
