@@ -1,0 +1,16 @@
+# Dummy Pending work for the day.
+# Format: ID|Name|Priority|DurationMinutes|LocationID|Prerequisites|Status
+# Priority 1..10 (higher = more important). Duration 1..600 minutes.
+# Prerequisites: - for none, or task IDs separated by commas (e.g. 1,4)
+# Status: PENDING or DONE
+1|Revise DSA Notes|7|20|2|-|PENDING
+2|Solve DSA Practice Set|8|35|2|1|PENDING
+3|Submit Lab Record|10|15|6|-|PENDING
+4|Read OOP Chapter 2|6|25|2|-|PENDING
+5|Return Library Book|3|10|2|-|PENDING
+6|Group Project Meeting|9|40|3|-|PENDING
+7|Study Responsible AI Notes|4|20|6|-|DONE
+8|Fix OOPS Lab Program|6|30|4|8|PENDING
+9|Research Lab Induction|8|30|8|-|PENDING
+10|Write Logic Design Lab Report|7|50|5|9|PENDING
+11|Probability Assignment|9|55|2|-|PENDING
