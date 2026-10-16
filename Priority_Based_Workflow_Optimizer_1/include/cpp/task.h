@@ -1,147 +1,144 @@
-// task.h
-// Owner: Akhil
-//
-// This is the "dictionary" of our project. It defines what a task and a
-// free time slot look like, so every other file uses exactly the same
-// definition instead of making its own copy.
-//
-// Part 1 (C style)  : limits, two plain structures (TaskData, TimeSlot)
-//                     and small text helpers (pu_...) that every file
-//                     reader uses.
-// Part 2 (C++ / OOP): the Task class.
-//
-// In Phase 3 we will also add the plan result types and the abstract
-// Scheduler class here.
-
+/*
+ * task.h
+ * Owner: Akhil (common data model)
+ *
+ * This is the ONE place where the project's shared data types are defined.
+ * Every other module includes this file instead of making its own copy.
+ *
+ * Part 1 (DS with C style) : constants, two plain structures (TaskData,
+ *                            TimeSlot) and small text helpers (pu_...)
+ *                            used by every file loader.
+ * Part 2 (OOP with C++)    : the Task class.
+ *
+ * Phase 3 will add here: the plan result types (PlannedTask, SlotUsage,
+ * DeferredTask, ScheduleResult), SchedulingInput and the abstract base
+ * class Scheduler that GreedyScheduler and KnapsackScheduler inherit from.
+ */
 #ifndef TASK_H
 #define TASK_H
 
-// ============================ Part 1: plain data ============================
+/* ===================== Part 1: plain data (C style) ===================== */
 
-// Longest name we store (task, building, period), counting the '\0' at the end.
-// So a name can have at most 63 characters.
+/* Longest name (task, location, activity) including the final '\0'. */
 #define MAX_NAME_LEN 64
 
-// A task can need at most this many other tasks to be finished first.
+/* A task may list at most this many prerequisite tasks. */
 #define MAX_PREREQUISITES 5
 
-// Size limits for our fixed arrays.
+/* Upper limits for the fixed-size tables used in the project. */
 #define MAX_TASKS 100
 #define MAX_SLOTS 50
 #define MAX_LOCATIONS 50
 
-// Used when we mean "no building". Real building IDs start from 1.
+/* Value used when "no location" is meant. Real location IDs are >= 1. */
 #define NO_LOCATION (-1)
 
-// Allowed priority values. A bigger number means a more important task.
+/* Valid priority range. A HIGHER number means a MORE important task. */
 #define MIN_PRIORITY 1
 #define MAX_PRIORITY 10
 
-// Allowed task length in minutes.
+/* Valid task duration range in minutes. */
 #define MIN_TASK_DURATION 1
 #define MAX_TASK_DURATION 600
 
-// One task, exactly as it is written in tasks.txt.
-typedef struct TaskData
-{
-    int id;                                   // unique number, 1 or more
-    char name[MAX_NAME_LEN];                  // e.g. "Submit Lab Record"
-    int durationMinutes;                      // how long it takes
-    int priority;                             // 1..10, higher = more important
-    int locationId;                           // the building where it is done
-    int prerequisiteCount;                    // how many entries below are used
-    int prerequisiteIds[MAX_PREREQUISITES];   // tasks that must be finished first
-    int isCompleted;                          // 1 = already done, 0 = still pending
+/* One pending (or completed) piece of work, exactly as stored in tasks.txt. */
+typedef struct TaskData {
+    int id;                                   /* unique task ID, >= 1           */
+    char name[MAX_NAME_LEN];                  /* human readable name            */
+    int durationMinutes;                      /* how long the task takes        */
+    int priority;                             /* 1..10, higher = more important */
+    int locationId;                           /* where the task must be done    */
+    int prerequisiteCount;                    /* number of used entries below   */
+    int prerequisiteIds[MAX_PREREQUISITES];   /* tasks that must finish first   */
+    int isCompleted;                          /* 1 = already done, 0 = pending  */
 } TaskData;
 
-// One free period of the day.
-// All times are stored as "minutes since midnight", e.g. 09:30 -> 570,
-// because numbers are easy to compare and subtract.
-//
-// fromLocationId: where the class just before this free period was held.
-//                 It is NO_LOCATION if the period before was also free (or
-//                 if the day starts with this free period).
-// toLocationId:   where the class just after this free period is held.
-//                 It is NO_LOCATION if the next period is also free (or the
-//                 day ends), so nobody has to walk to a class.
-typedef struct TimeSlot
-{
-    int slotId;                               // 1, 2, 3 ... in time order
+/*
+ * One FREE period of the timetable, given to the schedulers.
+ * All times are "minutes since midnight", e.g. 09:30 -> 570.
+ *
+ * fromLocationId: location of the CLASS right before this free period.
+ *                 NO_LOCATION if the period before it was also free (or the
+ *                 day starts with it). Then the scheduler uses the place where
+ *                 the student finished the previous free period.
+ * toLocationId:   location of the CLASS right after this free period.
+ *                 NO_LOCATION if the next period is also free (or the day
+ *                 ends), so no walk to a class is needed inside this slot.
+ */
+typedef struct TimeSlot {
+    int slotId;                               /* 1, 2, 3 ... in time order      */
     int startMinute;
     int endMinute;
-    int durationMinutes;                      // endMinute - startMinute
-    int fromLocationId;                       // see the note above
-    int toLocationId;                         // see the note above
-    char previousActivity[MAX_NAME_LEN];      // name of the period before ("-" if none)
-    char nextActivity[MAX_NAME_LEN];          // name of the period after  ("-" if none)
+    int durationMinutes;                      /* endMinute - startMinute        */
+    int fromLocationId;                       /* see comment above              */
+    int toLocationId;                         /* see comment above              */
+    char previousActivity[MAX_NAME_LEN];      /* period before ("-" if none)    */
+    char nextActivity[MAX_NAME_LEN];          /* period after  ("-" if none)    */
 } TimeSlot;
 
-// ------------------- text helpers for reading our data files -------------------
-// We are not allowed to use std::string, so we work with char arrays.
+/* ---------- text helpers for reading the data files (no std::string) ---------- */
 
-#include <cstdio>   // FILE
+#include <cstdio>   /* FILE */
 
-// Size of the buffer we read one line of a file into.
+/* Size of the buffer used to read one line from a data file. */
 #define LINE_BUFFER_SIZE 256
 
-// Every data file separates its fields with this character.
+/* Field separator used in every data file. */
 #define FIELD_SEPARATOR '|'
 
-// Reads one line into buffer and removes the '\n' at the end.
-// Returns 1 if a line was read, 0 when the file is finished.
-// If the line was too long for the buffer, the rest of it is skipped
-// and *lineTooLong is set to 1, so the caller can report it.
+/*
+ * Reads one line into buffer (newline removed).
+ * Returns 1 if a line was read, 0 at end of file.
+ * If the line did not fit, the rest of it is skipped and *lineTooLong = 1.
+ */
 int pu_read_line(FILE* file, char* buffer, int bufferSize, int* lineTooLong);
 
-// Removes spaces, tabs and line-end characters from both ends of text.
-// The text is changed in place.
+/* Removes spaces, tabs and '\r' from both ends of text (in place). */
 void pu_trim(char* text);
 
-// Returns 1 if the line is empty or is a comment (starts with '#').
+/* Returns 1 for an empty line or a comment line starting with '#'. */
 int pu_is_skippable(const char* line);
 
-// Cuts the line at every separator and makes fields[i] point at each part
-// (each part is trimmed). The line itself is changed: every separator becomes '\0'.
-// Returns how many parts the line has. If that is more than maxFields,
-// only the first maxFields parts are stored - the caller uses the count
-// to see that the line has too many fields.
+/*
+ * Splits line at every separator (in place) and stores pointers to the
+ * trimmed fields. Returns the number of fields found (it can be larger than
+ * maxFields, which tells the caller that the record has too many fields).
+ */
 int pu_split(char* line, char separator, char** fields, int maxFields);
 
-// Turns text like "42" or "-7" into a number. Only an optional sign and
-// digits are allowed ("4a" is rejected). Returns 1 on success, 0 if not.
+/* Strict integer parse: optional sign and digits only. Returns 1 on success. */
 int pu_parse_int(const char* text, int* value);
 
-// Turns a time into minutes since midnight. Two formats are accepted:
-//   24-hour: "13:50"
-//   12-hour: "01:50 PM" or "08:00 AM" (one space, then AM or PM)
-// Returns 1 on success, 0 if the text is not a valid time.
+/* Parses "HH:MM" (00:00 .. 23:59) into minutes since midnight. Returns 1 on success. */
 int pu_parse_time(const char* text, int* minutes);
 
-// The opposite: writes minutes since midnight as "HH:MM" (needs 6 chars).
+/* Writes minutes since midnight as "HH:MM" into buffer (needs 6 chars). */
 void pu_format_time(int minutes, char* buffer, int bufferSize);
 
-// Copies source into destination only if the whole text fits.
-// Returns 1 on success. If it is too long, destination becomes "" and 0 is returned.
+/*
+ * Copies source into destination only if it fits completely.
+ * Returns 1 on success, 0 if source is too long (destination becomes "").
+ */
 int pu_copy_text(char* destination, int destinationSize, const char* source);
 
-// Compares two texts without caring about capital letters ("Library" == "library").
-// Returns 1 if they are the same.
+/* Case-insensitive comparison of two texts. Returns 1 if equal. */
 int pu_equals_ignore_case(const char* first, const char* second);
 
-// ============================ Part 2: the Task class ============================
+/* ===================== Part 2: classes (OOP with C++) ===================== */
 
 #include <iostream>
 
-// Task gives an object-oriented, read-only view of one TaskData record.
-//
-// The record is private (encapsulation): other code can read it through
-// the getters below but cannot change it. Adding or changing tasks is
-// done by the task manager, which checks the data first.
-class Task
-{
+/*
+ * Task - an object-oriented, read-only view of one TaskData record.
+ *
+ * Encapsulation: the record is private. Other classes can read it through
+ * getters but cannot change it. Changes (add, update, complete, delete)
+ * always go through TaskManager, which validates them first.
+ */
+class Task {
 public:
-    Task();                                // an empty task (location = NO_LOCATION)
-    explicit Task(const TaskData& record); // a task made from a record of tasks.txt
+    Task();
+    explicit Task(const TaskData& record);
 
     int getId() const;
     const char* getName() const;
@@ -149,30 +146,36 @@ public:
     int getPriority() const;
     int getLocationId() const;
     int getPrerequisiteCount() const;
-    int getPrerequisiteId(int position) const;   // gives -1 for a wrong position
+    int getPrerequisiteId(int position) const;   /* returns -1 if position is invalid */
     bool isCompleted() const;
-    bool hasPrerequisite(int taskId) const;      // does this task need taskId?
+    bool hasPrerequisite(int taskId) const;
 
-    // The order in which we prefer tasks, used everywhere in the project:
-    //   1. higher priority first
-    //   2. if the priority is the same, the shorter task first
-    //   3. if that is also the same, the lower ID first
+    /*
+     * Greedy ranking rule used by the whole project:
+     *   1. higher priority first
+     *   2. if equal, shorter duration first
+     *   3. if still equal, lower task ID first
+     */
     bool ranksHigherThan(const Task& other) const;
 
-    // "a > b" means "a should be picked before b" (same rule as above).
+    /* "a > b" means "a should be chosen before b" (same as ranksHigherThan). */
     bool operator>(const Task& other) const;
 
-    // Two Task objects are equal if they are the same task (same ID).
+    /* Two Task objects are equal when they describe the same task ID. */
     bool operator==(const Task& other) const;
 
 private:
     TaskData data;
 };
 
-// Lets us print a task with cout, e.g. "T3 Submit Lab Record (15 min, P10)".
+/* Prints one task on a single line, e.g. "T3 Submit Lab Record (15 min, P10)". */
 std::ostream& operator<<(std::ostream& out, const Task& task);
 
-// Phase 3: PlannedTask, SlotUsage, DeferredTask, SchedulingInput,
-// ScheduleResult and the abstract Scheduler class will be added here.
+/*
+ * ---------------------------------------------------------------------
+ * Phase 3: PlannedTask, SlotUsage, DeferredTask, SchedulingInput,
+ *          ScheduleResult and the abstract class Scheduler go here.
+ * ---------------------------------------------------------------------
+ */
 
-#endif // TASK_H
+#endif /* TASK_H */

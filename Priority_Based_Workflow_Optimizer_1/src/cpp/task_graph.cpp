@@ -1,28 +1,20 @@
 /*
- * task_graph.cpp
+ * task_graph.c
  * Owner: Samriddhi
  *
- * The prerequisite graph: every task keeps a linked list of the tasks
- * that are waiting for it. We also check the rules for circles using
- * DFS, because a circle means some tasks can never be started.
- *
- * Written in C style (structures, pointers, linked lists and plain
- * functions), like our Data Structures lab programs.
+ * Prerequisite graph: adjacency lists, DFS cycle detection and
+ * (Kahn's topological sort comes in Phase 3.)
+ * Style: DS with C (structures, linked lists, pointers, functions)
  */
-
 #include "task_graph.h"
 
 #include <cstdio>
 #include <cstdlib>
 
-/*
- * The three states a task can be in while DFS is running.
- * The "visiting" state is what lets us spot a circle: if we reach a task
- * that is still on the path we are walking right now, we went round.
- */
-#define STATE_UNVISITED 0   /* DFS has not reached this task yet           */
-#define STATE_VISITING 1    /* on the path we are exploring at the moment  */
-#define STATE_DONE 2        /* fully explored, nothing more to see here    */
+/* DFS colours for cycle detection. */
+#define STATE_UNVISITED 0
+#define STATE_VISITING 1   /* on the current DFS path */
+#define STATE_DONE 2       /* fully processed         */
 
 void tg_init(TaskGraph* graph)
 {
@@ -36,11 +28,10 @@ void tg_init(TaskGraph* graph)
 
 void tg_free(TaskGraph* graph)
 {
-    /* Each list was built with malloc, so we free it box by box. */
     for (int index = 0; index < graph->count; index++) {
         DependencyNode* node = graph->vertices[index].dependents;
         while (node != NULL) {
-            DependencyNode* next = node->next;   /* remember the next box before freeing this one */
+            DependencyNode* next = node->next;
             free(node);
             node = next;
         }
@@ -51,7 +42,6 @@ void tg_free(TaskGraph* graph)
 
 int tg_find_index(const TaskGraph* graph, int taskId)
 {
-    /* Simple linear search - we have at most 100 tasks, so this is fast enough. */
     for (int index = 0; index < graph->count; index++) {
         if (graph->vertices[index].taskId == taskId) {
             return index;
@@ -66,17 +56,16 @@ TaskGraphStatus tg_add_task(TaskGraph* graph, int taskId, int priority)
         return TG_ERR_INVALID_ID;
     }
     if (tg_find_index(graph, taskId) != -1) {
-        return TG_ERR_DUPLICATE;          /* the same task cannot be added twice */
+        return TG_ERR_DUPLICATE;
     }
     if (graph->count >= MAX_TASKS) {
         return TG_ERR_FULL;
     }
 
-    /* The new task goes into the next free place of the array. */
     TaskVertex* vertex = &graph->vertices[graph->count];
     vertex->taskId = taskId;
     vertex->priority = priority;
-    vertex->dependents = NULL;            /* no arrows yet */
+    vertex->dependents = NULL;
     graph->count++;
     return TG_OK;
 }
@@ -84,19 +73,16 @@ TaskGraphStatus tg_add_task(TaskGraph* graph, int taskId, int priority)
 TaskGraphStatus tg_add_prerequisite(TaskGraph* graph, int prerequisiteId, int taskId)
 {
     if (prerequisiteId == taskId) {
-        return TG_ERR_SELF_LOOP;          /* "T3 needs T3" makes no sense */
+        return TG_ERR_SELF_LOOP;
     }
 
     int fromIndex = tg_find_index(graph, prerequisiteId);
     int toIndex = tg_find_index(graph, taskId);
     if (fromIndex == -1 || toIndex == -1) {
-        return TG_ERR_INVALID_ID;         /* both tasks must already exist */
+        return TG_ERR_INVALID_ID;
     }
 
-    /*
-     * Go to the end of the prerequisite's list. On the way we also check
-     * that this arrow is not already there, so we never store it twice.
-     */
+    /* Walk to the end of the list, rejecting a duplicate edge on the way. */
     DependencyNode* last = NULL;
     DependencyNode* node = graph->vertices[fromIndex].dependents;
     while (node != NULL) {
@@ -114,9 +100,9 @@ TaskGraphStatus tg_add_prerequisite(TaskGraph* graph, int prerequisiteId, int ta
     newNode->toIndex = toIndex;
     newNode->next = NULL;
 
-    /* Add at the end, so the list keeps the same order as the file. */
+    /* Append at the tail so lists keep the order in which edges were added. */
     if (last == NULL) {
-        graph->vertices[fromIndex].dependents = newNode;   /* list was empty */
+        graph->vertices[fromIndex].dependents = newNode;
     } else {
         last->next = newNode;
     }
@@ -130,7 +116,6 @@ int tg_vertex_count(const TaskGraph* graph)
 
 int tg_edge_count(const TaskGraph* graph)
 {
-    /* Every box in every list is one arrow, so we just count the boxes. */
     int edges = 0;
     for (int index = 0; index < graph->count; index++) {
         const DependencyNode* node = graph->vertices[index].dependents;
@@ -149,11 +134,7 @@ int tg_get_prerequisites(const TaskGraph* graph, int taskId, int* out, int maxCo
         return 0;
     }
 
-    /*
-     * Our lists point forward (from a task to the tasks waiting for it).
-     * To find what taskId needs, we look through every list and pick the
-     * tasks whose list contains taskId.
-     */
+    /* A prerequisite of the target is any vertex whose list contains the target. */
     int found = 0;
     for (int index = 0; index < graph->count; index++) {
         const DependencyNode* node = graph->vertices[index].dependents;
@@ -183,7 +164,6 @@ void tg_display(const TaskGraph* graph)
         const TaskVertex* vertex = &graph->vertices[index];
         printf("  T%-3d (P%-2d) -> ", vertex->taskId, vertex->priority);
 
-        /* First the tasks that are waiting for this one... */
         const DependencyNode* node = vertex->dependents;
         if (node == NULL) {
             printf("(no dependents)");
@@ -196,7 +176,6 @@ void tg_display(const TaskGraph* graph)
             node = node->next;
         }
 
-        /* ...then the tasks this one needs, if any. */
         int prerequisites[MAX_TASKS];
         int prerequisiteCount = tg_get_prerequisites(graph, vertex->taskId, prerequisites, MAX_TASKS);
         if (prerequisiteCount > 0) {
@@ -211,15 +190,10 @@ void tg_display(const TaskGraph* graph)
         printf("\n");
     }
 }
-<<<<<<< HEAD:Priority_Based_Workflow_Optimizer_1/src/cpp/graph.cpp
 
 /*
- * One step of DFS, written with recursion.
- *
- * We mark the task as "visiting" and walk into every task waiting for it.
- * If we meet a task that is still "visiting", we have come back to our own
- * path - that is a circle. We remember where it starts and ends and stop.
- * When all neighbours are explored, the task becomes "done".
+ * Recursive DFS. Returns 1 as soon as a back edge (an edge into a VISITING
+ * vertex) is found; *cycleStart and *cycleEnd then describe that edge.
  */
 static int dfs_visit(const TaskGraph* graph, int index, int* state, int* parent,
                      int* cycleStart, int* cycleEnd)
@@ -230,18 +204,17 @@ static int dfs_visit(const TaskGraph* graph, int index, int* state, int* parent,
     while (node != NULL) {
         int next = node->toIndex;
         if (state[next] == STATE_VISITING) {
-            /* Came back to a task on the current path: circle found. */
+            /* Back edge index -> next closes a cycle. */
             *cycleStart = next;
             *cycleEnd = index;
             return 1;
         }
         if (state[next] == STATE_UNVISITED) {
-            parent[next] = index;   /* remember how we got here, to print the circle later */
+            parent[next] = index;
             if (dfs_visit(graph, next, state, parent, cycleStart, cycleEnd)) {
                 return 1;
             }
         }
-        /* A task that is already "done" is safe - meeting it again is not a circle. */
         node = node->next;
     }
 
@@ -253,10 +226,9 @@ int tg_find_cycle(const TaskGraph* graph, int* cycleIds, int* cycleLength)
 {
     *cycleLength = 0;
     if (graph->count == 0) {
-        return 0;                         /* no tasks, so no circle */
+        return 0;
     }
 
-    /* One state and one "came from" value for every task. */
     int* state = (int*)malloc((size_t)graph->count * sizeof(int));
     int* parent = (int*)malloc((size_t)graph->count * sizeof(int));
     if (state == NULL || parent == NULL) {
@@ -274,7 +246,6 @@ int tg_find_cycle(const TaskGraph* graph, int* cycleIds, int* cycleLength)
     int cycleEnd = -1;
     int found = 0;
 
-    /* Start a DFS from every task that nobody has reached yet. */
     for (int index = 0; index < graph->count && !found; index++) {
         if (state[index] == STATE_UNVISITED) {
             found = dfs_visit(graph, index, state, parent, &cycleStart, &cycleEnd);
@@ -282,11 +253,7 @@ int tg_find_cycle(const TaskGraph* graph, int* cycleIds, int* cycleLength)
     }
 
     if (found) {
-        /*
-         * Build the circle so we can show it to the user.
-         * Starting from where the circle closed, we follow the "came from"
-         * links backwards until we reach the start of the circle.
-         */
+        /* Walk back from cycleEnd to cycleStart using parent links. */
         int reversed[MAX_TASKS];
         int reversedCount = 0;
         int current = cycleEnd;
@@ -296,7 +263,7 @@ int tg_find_cycle(const TaskGraph* graph, int* cycleIds, int* cycleLength)
             current = parent[current];
         }
 
-        /* Write it in the normal order and end with the start again, e.g. 1 -> 2 -> 1. */
+        /* Output: start, ..., end, start  (e.g. 7 -> 8 -> 7). */
         cycleIds[0] = graph->vertices[cycleStart].taskId;
         int written = 1;
         for (int position = reversedCount - 1; position >= 0; position--) {
@@ -308,7 +275,6 @@ int tg_find_cycle(const TaskGraph* graph, int* cycleIds, int* cycleLength)
         *cycleLength = written;
     }
 
-    /* We are done with the helper arrays, so give the memory back. */
     free(state);
     free(parent);
     return found;
@@ -334,5 +300,3 @@ const char* tg_status_message(TaskGraphStatus status)
     }
     return "unknown status";
 }
-=======
->>>>>>> 9f60cbd779cfdd7ba39f212916e296a1cb0b9cb5:Priority_Based_Workflow_Optimizer_1/src/cpp/task_graph.cpp
