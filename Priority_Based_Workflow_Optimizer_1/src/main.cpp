@@ -1,7 +1,4 @@
 /*
- * main.cpp
- * Owner: Akhil
- *
  * The only entry point of the program. It creates the application, loads
  * the data, runs the menu, and lets the destructor release all memory.
  */
