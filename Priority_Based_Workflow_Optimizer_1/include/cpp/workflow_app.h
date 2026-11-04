@@ -6,11 +6,13 @@
  * console menu. It only COORDINATES: each algorithm lives in its own module.
  *
  * Main menu (0 = Exit). "Manage" options open a sub-menu (0 = Back).
- *   1 Manage Locations      4 Manage To-Do List     7 View Itinerary  (Phase 3)
- *   2 Manage Routes         5 View Schedule         8 Save Data       (Phase 3)
- *   3 Manage Fixed Schedule 6 Optimize My Day (Phase 3)   9 Load Data
+ *   1 Manage Locations      4 Manage To-Do List     7 View Itinerary
+ *   2 Manage Routes         5 View Schedule         8 Save Data
+ *   3 Manage Fixed Schedule 6 Optimize My Day       9 Load Data
  *
- * Options marked "(Phase 3)" print a short message in this phase.
+ * Phase 3: the two planners (Greedy, 0/1 Knapsack) are used through a
+ * Scheduler pointer, the chosen plan is kept in currentPlan, and every
+ * list can be edited from the menu and saved back to data/.
  *
  * Data files are opened with paths relative to the project folder
  * (data/tasks.txt, ...), so the program must be started from that folder.
@@ -23,6 +25,9 @@
 #include "schedule_manager.h"
 #include "location_graph.h"
 #include "task_graph.h"
+#include "scheduler.h"
+#include "optimizer.h"
+#include "knapsack.h"
 
 class WorkflowApp {
 public:
@@ -52,7 +57,6 @@ private:
     void printMenuBox(const char* title, const char* const items[], int itemCount, const char* zeroLabel) const;
     void printOk(const char* message) const;
     void printLocationList() const;
-    void showPhase3Message(const char* feature) const;
 
     /* ---- main menu ---- */
     void printMenu() const;
@@ -76,10 +80,37 @@ private:
     void showTasksByPriority() const;
     void reloadData();
 
+    /* ---- Phase 3: planning ---- */
+    void makeSchedulingInput(SchedulingInput& input) const;
+    void runPlanner(const Scheduler& planner);
+    void comparePlanners();
+    void printPlanSummary(const ScheduleResult& plan) const;
+    void showItinerary() const;
+    void printWalk(int startMinute, int fromId, int toId, int minutes) const;
+    const TimeSlot* findSlot(int slotId) const;
+
+    /* ---- Phase 3: editing and saving ---- */
+    void addLocation();
+    void addRoute();
+    void removeRoute();
+    void addPeriod();
+    void deletePeriod();
+    void addTask();
+    void updateTask();
+    void markTaskDone();
+    void deleteTask();
+    void showTaskOrder() const;
+    bool readTaskFields(TaskData& task, bool keepAllowed);
+    bool applyTaskGraphChange(const TaskData* undoRecord, int addedTaskId);
+    void markDataChanged();
+    void saveData();
+
     /* ---- input helpers (all input is read line by line) ---- */
     bool readLine(const char* prompt, char* buffer, int bufferSize);
     bool readInteger(const char* prompt, int minimum, int maximum, int& value);
     bool readLocationId(const char* prompt, int& locationId);
+    bool readIntegerOrKeep(const char* prompt, int minimum, int maximum, int& value);
+    bool readTime(const char* prompt, int& minutes);
     const char* taskNameOf(int taskId) const;
 
     /* ---- module objects ---- */
@@ -91,7 +122,12 @@ private:
     Task* taskObjects;       /* new[]-allocated Task objects (OOP view of the tasks) */
     int taskObjectCount;
 
-    /* Phase 3: GreedyScheduler, KnapsackScheduler and their ScheduleResults. */
+    /* ---- Phase 3: planners and the plan the user chose ---- */
+    GreedyScheduler greedyPlanner;
+    KnapsackScheduler knapsackPlanner;
+    ScheduleResult currentPlan;
+    bool hasPlan;              /* currentPlan matches the current data      */
+    bool hasUnsavedChanges;    /* something was edited since the last save  */
 
     bool inputClosed;        /* true after end-of-input (Ctrl+D / Ctrl+Z) */
 };
