@@ -7,42 +7,38 @@
 #include "task.h"
 
 #include <cstring>
-#include <cstdio>
+#include <cstdio>     // snprintf for pu_format_time
 #include <climits>
+#include <istream>
+#include <limits>     // std::numeric_limits for ignore()
 
 // ============================ Part 1: text helpers ============================
 
-int pu_read_line(FILE* file, char* buffer, int bufferSize, int* lineTooLong)
+int pu_read_line(std::istream& in, char* buffer, int bufferSize, int* lineTooLong)
 {
     *lineTooLong = 0;
+    buffer[0] = '\0';
 
-    // fgets gives NULL when there is nothing left to read.
-    if (fgets(buffer, bufferSize, file) == NULL) {
+    // getline reads up to the '\n' (and removes it) or until the buffer is full.
+    // It also works for the last line of a file that has no '\n' at the end.
+    if (in.getline(buffer, bufferSize)) {
+        return 1;
+    }
+
+    // Nothing was read and the stream is at its end: there are no more lines.
+    if (in.gcount() == 0 && in.eof()) {
         return 0;
     }
-
-    size_t length = strlen(buffer);
-
-    // Normal case: the whole line fitted, so the last character is '\n'.
-    if (length > 0 && buffer[length - 1] == '\n') {
-        buffer[length - 1] = '\0';
-        return 1;
+    if (in.bad()) {
+        return 0;   // a real read error
     }
 
-    // No '\n' at the end: either this was the last line of the file,
-    // or the line was longer than our buffer.
-    if (feof(file)) {
-        return 1;
-    }
-
+    // The buffer filled up before the '\n', so the line is too long.
+    // clear() removes the error state; ignore() throws away the rest of the
+    // line, so the next call starts at the beginning of the next line.
     *lineTooLong = 1;
-
-    // Throw away the rest of the long line, so the next call starts
-    // reading at the beginning of the next line.
-    int character = fgetc(file);
-    while (character != '\n' && character != EOF) {
-        character = fgetc(file);
-    }
+    in.clear();
+    in.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
     return 1;
 }
 

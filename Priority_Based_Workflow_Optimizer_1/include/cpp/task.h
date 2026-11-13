@@ -10,9 +10,10 @@
  *                            used by every file loader.
  * Part 2 (OOP with C++)    : the Task class.
  *
- * Phase 3 will add here: the plan result types (PlannedTask, SlotUsage,
- * DeferredTask, ScheduleResult), SchedulingInput and the abstract base
- * class Scheduler that GreedyScheduler and KnapsackScheduler inherit from.
+ * Phase 3: the plan result types (PlannedTask, SlotUsage, DeferredTask,
+ * ScheduleResult), SchedulingInput and the abstract base class Scheduler
+ * are in scheduler.h. They need the task graph and Dijkstra, and this file
+ * must stay the lowest one that every other file includes.
  */
 #ifndef TASK_H
 #define TASK_H
@@ -78,7 +79,7 @@ typedef struct TimeSlot {
 
 /* ---------- text helpers for reading the data files (no std::string) ---------- */
 
-#include <cstdio>   /* FILE */
+#include <istream>   /* std::istream: std::ifstream (a file) is one */
 
 /* Size of the buffer used to read one line from a data file. */
 #define LINE_BUFFER_SIZE 256
@@ -87,11 +88,12 @@ typedef struct TimeSlot {
 #define FIELD_SEPARATOR '|'
 
 /*
- * Reads one line into buffer (newline removed).
+ * Reads one line from an input stream into buffer (newline removed).
+ * The loaders pass a std::ifstream; it works with any std::istream.
  * Returns 1 if a line was read, 0 at end of file.
  * If the line did not fit, the rest of it is skipped and *lineTooLong = 1.
  */
-int pu_read_line(FILE* file, char* buffer, int bufferSize, int* lineTooLong);
+int pu_read_line(std::istream& in, char* buffer, int bufferSize, int* lineTooLong);
 
 /* Removes spaces, tabs and '\r' from both ends of text (in place). */
 void pu_trim(char* text);
@@ -171,11 +173,6 @@ private:
 /* Prints one task on a single line, e.g. "T3 Submit Lab Record (15 min, P10)". */
 std::ostream& operator<<(std::ostream& out, const Task& task);
 
-/*
- * ---------------------------------------------------------------------
- * Phase 3: PlannedTask, SlotUsage, DeferredTask, SchedulingInput,
- *          ScheduleResult and the abstract class Scheduler go here.
- * ---------------------------------------------------------------------
- */
+/* Phase 3: the plan types and the Scheduler base class are in scheduler.h. */
 
 #endif /* TASK_H */

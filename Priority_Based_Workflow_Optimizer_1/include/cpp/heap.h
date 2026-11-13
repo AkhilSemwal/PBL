@@ -2,17 +2,17 @@
 #define HEAP_H
 
 // key = priority or distance, value = task id or location id
-struct HeapNode
+typedef struct HeapNode
 {
     int key;
     int value;
-};
+} HeapNode;
 
-enum HeapType
+typedef enum HeapType
 {
     MIN_HEAP,
     MAX_HEAP
-};
+} HeapType;
 
 class Heap
 {
