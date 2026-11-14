@@ -31,7 +31,8 @@ typedef enum LocationGraphStatus
     LG_ERR_SELF_LOOP,        /* a path must join two different buildings    */
     LG_ERR_BAD_NAME,         /* name is empty or longer than 63 characters  */
     LG_ERR_FULL,             /* we already have MAX_LOCATIONS buildings     */
-    LG_ERR_NO_MEMORY         /* malloc could not give us memory             */
+    LG_ERR_NO_MEMORY,        /* malloc could not give us memory             */
+    LG_ERR_NOT_FOUND         /* there is no path between these buildings    */
 } LocationGraphStatus;
 
 /* One box in a building's list: "from here you can walk to toIndex in walkingMinutes". */
@@ -119,9 +120,20 @@ int lg_load_routes(LocationGraph* graph, const char* path, int* errorCount);
 /* Turns a status code into a short message we can print. */
 const char* lg_status_message(LocationGraphStatus status);
 
+/* ---------------------------- Phase 3 ---------------------------- */
+
+/* The smallest ID that no building uses yet (largest ID + 1). */
+int lg_next_id(const LocationGraph* graph);
+
+/* Removes the two-way path between idA and idB (both list boxes are freed). */
+LocationGraphStatus lg_remove_route(LocationGraph* graph, int idA, int idB);
+
 /*
- * Coming in Phase 3: removing a path, giving a new building the next free
- * ID, and saving the map back to locations.txt and routes.txt.
+ * Writes the map back to the files, in the same format we read.
+ * Every two-way path is written once. Both return 1 on success, 0 if the
+ * file could not be opened for writing.
  */
+int lg_save_locations(const LocationGraph* graph, const char* path);
+int lg_save_routes(const LocationGraph* graph, const char* path);
 
 #endif /* LOCATION_GRAPH_H */

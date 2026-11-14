@@ -36,7 +36,7 @@ typedef struct DependencyNode {
 
 typedef struct TaskVertex {
     int taskId;
-    int priority;                 /* copied from the task (used for ordering in Phase 3) */
+    int priority;                 /* copied from the task (used by Kahn's algorithm) */
     DependencyNode* dependents;   /* head of the adjacency list                    */
 } TaskVertex;
 
@@ -81,11 +81,24 @@ int tg_find_cycle(const TaskGraph* graph, int* cycleIds, int* cycleLength);
 const char* tg_status_message(TaskGraphStatus status);
 
 
+/* ------------------------------ Phase 3 ------------------------------ */
+
 /*
- * Phase 3:
- *   tg_prerequisites_done()  - "are all prerequisites of this task finished?"
- *                              (needed by the Greedy and Knapsack schedulers)
- *   tg_topological_sort()    - Kahn's algorithm with a max-heap
+ * Returns 1 if every prerequisite of taskId is in finishedIds
+ * (the tasks that are DONE or already planned earlier), otherwise 0.
+ * Used by the Greedy and Knapsack schedulers.
  */
+int tg_prerequisites_done(const TaskGraph* graph, int taskId,
+                          const int* finishedIds, int finishedCount);
+
+/*
+ * Kahn's algorithm. Writes every task ID into orderIds so that each task
+ * comes after all its prerequisites. When several tasks are ready at the
+ * same time, a MAX_HEAP picks the highest priority first (ties: the task
+ * that comes first in the task list).
+ * Returns TG_OK, TG_ERR_CYCLE (no valid order exists) or TG_ERR_NO_MEMORY.
+ * orderIds must have room for MAX_TASKS values.
+ */
+TaskGraphStatus tg_topological_sort(const TaskGraph* graph, int* orderIds, int* orderCount);
 
 #endif /* TASK_GRAPH_H */

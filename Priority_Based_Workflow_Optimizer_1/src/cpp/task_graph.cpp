@@ -3,10 +3,11 @@
  * Owner: Samriddhi
  *
  * Prerequisite graph: adjacency lists, DFS cycle detection and
- * (Kahn's topological sort comes in Phase 3.)
+ * Phase 3: prerequisite check for the planners and Kahn's topological sort.
  * Style: DS with C (structures, linked lists, pointers, functions)
  */
 #include "task_graph.h"
+#include "heap.h"   /* Phase 3: MAX_HEAP for Kahn's algorithm */
 
 #include <cstdio>
 #include <cstdlib>
@@ -299,4 +300,84 @@ const char* tg_status_message(TaskGraphStatus status)
         return "dependency cycle found";
     }
     return "unknown status";
+}
+
+/* ============================== Phase 3 ============================== */
+
+int tg_prerequisites_done(const TaskGraph* graph, int taskId,
+                          const int* finishedIds, int finishedCount)
+{
+    int prerequisites[MAX_TASKS];
+    int count = tg_get_prerequisites(graph, taskId, prerequisites, MAX_TASKS);
+
+    for (int position = 0; position < count; position++) {
+        int found = 0;
+        for (int index = 0; index < finishedCount; index++) {
+            if (finishedIds[index] == prerequisites[position]) {
+                found = 1;
+                break;
+            }
+        }
+        if (!found) {
+            return 0;   /* this prerequisite is not finished yet */
+        }
+    }
+    return 1;
+}
+
+TaskGraphStatus tg_topological_sort(const TaskGraph* graph, int* orderIds, int* orderCount)
+{
+    *orderCount = 0;
+    if (graph->count == 0) {
+        return TG_OK;
+    }
+
+    /* In-degree = how many prerequisites a task is still waiting for. */
+    int* inDegree = (int*)malloc((size_t)graph->count * sizeof(int));
+    if (inDegree == NULL) {
+        return TG_ERR_NO_MEMORY;
+    }
+    for (int index = 0; index < graph->count; index++) {
+        inDegree[index] = 0;
+    }
+    for (int index = 0; index < graph->count; index++) {
+        const DependencyNode* node = graph->vertices[index].dependents;
+        while (node != NULL) {
+            inDegree[node->toIndex]++;
+            node = node->next;
+        }
+    }
+
+    /* Every task that needs nothing is ready. key = priority, value = vertex index. */
+    Heap ready(MAX_HEAP, graph->count);
+    for (int index = 0; index < graph->count; index++) {
+        if (inDegree[index] == 0) {
+            ready.push(graph->vertices[index].priority, index);
+        }
+    }
+
+    /* Take the most important ready task, then "remove" its outgoing edges. */
+    HeapNode next;
+    while (ready.pop(next)) {
+        int index = next.value;
+        orderIds[*orderCount] = graph->vertices[index].taskId;
+        (*orderCount)++;
+
+        const DependencyNode* node = graph->vertices[index].dependents;
+        while (node != NULL) {
+            inDegree[node->toIndex]--;
+            if (inDegree[node->toIndex] == 0) {
+                ready.push(graph->vertices[node->toIndex].priority, node->toIndex);
+            }
+            node = node->next;
+        }
+    }
+
+    free(inDegree);
+
+    /* Tasks inside a cycle never reach in-degree 0, so some are missing. */
+    if (*orderCount < graph->count) {
+        return TG_ERR_CYCLE;
+    }
+    return TG_OK;
 }

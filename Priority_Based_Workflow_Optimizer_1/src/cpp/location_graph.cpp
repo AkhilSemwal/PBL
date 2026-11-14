@@ -1,19 +1,9 @@
-/*
- * location_graph.cpp
- * Owner: Samriddhi
- *
- * The campus map: a fixed array of buildings, where every building keeps
- * a linked list of its neighbours and the walking time to each one.
- * The map is filled from locations.txt and routes.txt.
- *
- * Written in C style (structures, pointers, linked lists and plain
- * functions), like our Data Structures lab programs.
- */
 
 #include "location_graph.h"
 #include "task.h"   /* text helpers: pu_read_line, pu_split, pu_parse_int ... */
 
 #include <cstdio>
+#include <fstream>
 #include <cstdlib>
 
 void lg_init(LocationGraph* graph)
@@ -251,8 +241,8 @@ void showGraph(const LocationGraph* graph)
 int lg_load_locations(LocationGraph* graph, const char* path, int* errorCount)
 {
     *errorCount = 0;
-    FILE* file = fopen(path, "r");
-    if (file == NULL) {
+    std::ifstream file(path);   // opens the file for reading
+    if (!file.is_open()) {
         printf("  [ERROR] Cannot open locations file: %s\n", path);
         return -1;
     }
@@ -294,15 +284,15 @@ int lg_load_locations(LocationGraph* graph, const char* path, int* errorCount)
         loaded++;
     }
 
-    fclose(file);
+    file.close();   // (the destructor would also close it)
     return loaded;
 }
 
 int lg_load_routes(LocationGraph* graph, const char* path, int* errorCount)
 {
     *errorCount = 0;
-    FILE* file = fopen(path, "r");
-    if (file == NULL) {
+    std::ifstream file(path);   // opens the file for reading
+    if (!file.is_open()) {
         printf("  [ERROR] Cannot open routes file: %s\n", path);
         return -1;
     }
@@ -347,7 +337,7 @@ int lg_load_routes(LocationGraph* graph, const char* path, int* errorCount)
         loaded++;
     }
 
-    fclose(file);
+    file.close();   // (the destructor would also close it)
     return loaded;
 }
 
@@ -370,6 +360,107 @@ const char* lg_status_message(LocationGraphStatus status)
         return "too many locations";
     case LG_ERR_NO_MEMORY:
         return "out of memory";
+    case LG_ERR_NOT_FOUND:
+        return "no path between these locations";
     }
     return "unknown status";
+}
+
+/* ============================== Phase 3 ============================== */
+
+int lg_next_id(const LocationGraph* graph)
+{
+    /* Largest ID in use + 1, so a new building never takes an old ID. */
+    int largest = 0;
+    for (int index = 0; index < graph->count; index++) {
+        if (graph->vertices[index].id > largest) {
+            largest = graph->vertices[index].id;
+        }
+    }
+    return largest + 1;
+}
+
+/*
+ * Take the box that points to toIndex out of one building's list.
+ * Same "link" idea as append_route: link points at the pointer we may change.
+ * Returns 1 if a box was found and freed.
+ */
+static int unlink_route(LocationGraph* graph, int fromIndex, int toIndex)
+{
+    RouteNode** link = &graph->vertices[fromIndex].routes;
+    while (*link != NULL) {
+        if ((*link)->toIndex == toIndex) {
+            RouteNode* gone = *link;
+            *link = gone->next;   /* the list now skips this box */
+            free(gone);
+            return 1;
+        }
+        link = &(*link)->next;
+    }
+    return 0;
+}
+
+LocationGraphStatus lg_remove_route(LocationGraph* graph, int idA, int idB)
+{
+    int indexA = lg_find_index_by_id(graph, idA);
+    int indexB = lg_find_index_by_id(graph, idB);
+    if (indexA == -1 || indexB == -1) {
+        return LG_ERR_INVALID_ID;
+    }
+    if (!route_exists(graph, indexA, indexB)) {
+        return LG_ERR_NOT_FOUND;
+    }
+    /* A two-way path is two boxes, so both lists lose one box. */
+    unlink_route(graph, indexA, indexB);
+    unlink_route(graph, indexB, indexA);
+    return LG_OK;
+}
+
+/* Writes the buildings to any output stream (a file, or std::cout to test). */
+static void write_locations(const LocationGraph* graph, std::ostream& out)
+{
+    out << "# Campus locations\n";
+    out << "# Format: LocationID|LocationName\n";
+    for (int index = 0; index < graph->count; index++) {
+        out << graph->vertices[index].id << '|' << graph->vertices[index].name << '\n';
+    }
+}
+
+/* Writes every two-way path once, from the building with the smaller index. */
+static void write_routes(const LocationGraph* graph, std::ostream& out)
+{
+    out << "# Walking routes (two-way). Time in minutes, must be 0 or more.\n";
+    out << "# Format: FromLocationID|ToLocationID|WalkingMinutes\n";
+    for (int index = 0; index < graph->count; index++) {
+        const RouteNode* node = graph->vertices[index].routes;
+        while (node != NULL) {
+            if (index < node->toIndex) {
+                out << graph->vertices[index].id << '|' << graph->vertices[node->toIndex].id
+                    << '|' << node->walkingMinutes << '\n';
+            }
+            node = node->next;
+        }
+    }
+}
+
+int lg_save_locations(const LocationGraph* graph, const char* path)
+{
+    std::ofstream file(path);   // opens the file for writing (old content is replaced)
+    if (!file.is_open()) {
+        return 0;
+    }
+    write_locations(graph, file);   // an ofstream is an ostream, so this works
+    file.close();
+    return file.fail() ? 0 : 1;     // 0 if any write went wrong
+}
+
+int lg_save_routes(const LocationGraph* graph, const char* path)
+{
+    std::ofstream file(path);
+    if (!file.is_open()) {
+        return 0;
+    }
+    write_routes(graph, file);
+    file.close();
+    return file.fail() ? 0 : 1;
 }
