@@ -10,6 +10,7 @@
 #include "task.h"
 
 #include <cstdio>
+#include <fstream>
 #include <cstring>
 
 // One line of schedule.txt has exactly this many '|'-separated fields.
@@ -242,8 +243,8 @@ void sm_display_timetable(const ScheduleManager* manager, const LocationGraph* l
 int sm_load_from_file(ScheduleManager* manager, const char* path, int* errorCount)
 {
     *errorCount = 0;
-    FILE* file = fopen(path, "r");
-    if (file == NULL) {
+    std::ifstream file(path);   // opens the file for reading
+    if (!file.is_open()) {
         printf("  [ERROR] Cannot open schedule file: %s\n", path);
         return -1;
     }
@@ -331,7 +332,7 @@ int sm_load_from_file(ScheduleManager* manager, const char* path, int* errorCoun
         loaded++;
     }
 
-    fclose(file);
+    file.close();   // (the destructor would also close it)
     return loaded;
 }
 
@@ -350,6 +351,71 @@ const char* sm_status_message(ScheduleStatus status)
         return "invalid ID or name, or wrong location for the period type";
     case SM_ERR_FULL:
         return "too many periods";
+    case SM_ERR_NOT_FOUND:
+        return "no period has this ID";
     }
     return "unknown status";
+}
+
+// ============================== Phase 3 ==============================
+
+int sm_next_id(const ScheduleManager* manager)
+{
+    int largest = 0;
+    for (int index = 0; index < manager->periodCount; index++) {
+        if (manager->periods[index].id > largest) {
+            largest = manager->periods[index].id;
+        }
+    }
+    return largest + 1;
+}
+
+ScheduleStatus sm_delete_period(ScheduleManager* manager, int periodId)
+{
+    for (int index = 0; index < manager->periodCount; index++) {
+        if (manager->periods[index].id == periodId) {
+            // Slide every later period one place to the left. The order by
+            // start time stays the same, so no new sort is needed.
+            for (int later = index; later + 1 < manager->periodCount; later++) {
+                manager->periods[later] = manager->periods[later + 1];
+            }
+            manager->periodCount--;
+            sm_build_free_slots(manager);   // free slots may have changed
+            return SM_OK;
+        }
+    }
+    return SM_ERR_NOT_FOUND;
+}
+
+// Writes the timetable to any output stream (a file, or std::cout to test).
+static void write_schedule(const ScheduleManager* manager, std::ostream& out)
+{
+    out << "# Monday timetable. Every period is CLASS (never used for tasks) or FREE.\n";
+    out << "# Format: PeriodID|Start(HH:MM)|End(HH:MM)|Name|Type|LocationID\n";
+    out << "# A FREE period uses \"-\" as its location. Times are 24-hour.\n";
+
+    char startText[8];
+    char endText[8];
+    for (int index = 0; index < manager->periodCount; index++) {
+        const Period* period = &manager->periods[index];
+        pu_format_time(period->startMinute, startText, sizeof(startText));
+        pu_format_time(period->endMinute, endText, sizeof(endText));
+        out << period->id << '|' << startText << '|' << endText << '|' << period->name << '|';
+        if (period->type == PERIOD_CLASS) {
+            out << "CLASS|" << period->locationId << '\n';
+        } else {
+            out << "FREE|-\n";
+        }
+    }
+}
+
+int sm_save_to_file(const ScheduleManager* manager, const char* path)
+{
+    std::ofstream file(path);   // opens the file for writing (old content is replaced)
+    if (!file.is_open()) {
+        return 0;
+    }
+    write_schedule(manager, file);   // an ofstream is an ostream
+    file.close();
+    return file.fail() ? 0 : 1;
 }

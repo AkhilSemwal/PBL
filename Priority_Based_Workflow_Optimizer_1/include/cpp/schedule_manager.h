@@ -43,7 +43,8 @@ typedef enum ScheduleStatus
     SM_ERR_OVERLAP,        // it clashes with a period we already have
     SM_ERR_DUPLICATE_ID,   // another period already uses this ID
     SM_ERR_INVALID,        // bad ID or name, or the wrong location for its type
-    SM_ERR_FULL            // we already have MAX_PERIODS periods
+    SM_ERR_FULL,           // we already have MAX_PERIODS periods
+    SM_ERR_NOT_FOUND       // no period has this ID
 } ScheduleStatus;
 
 // One period of the timetable.
@@ -101,7 +102,16 @@ int sm_load_from_file(ScheduleManager* manager, const char* path, int* errorCoun
 // Turns a status code into a short message we can print.
 const char* sm_status_message(ScheduleStatus status);
 
-// Coming in Phase 3: sm_delete_period(), sm_next_id() and sm_save_to_file(),
-// so periods can be added and deleted from the menu and saved.
+// ------------------------------ Phase 3 ------------------------------
+
+// The smallest period ID that is not used yet (largest ID + 1).
+int sm_next_id(const ScheduleManager* manager);
+
+// Deletes the period with this ID, then makes the free slots again.
+ScheduleStatus sm_delete_period(ScheduleManager* manager, int periodId);
+
+// Writes the timetable back to schedule.txt (24-hour times).
+// Returns 1 on success, 0 if the file could not be opened for writing.
+int sm_save_to_file(const ScheduleManager* manager, const char* path);
 
 #endif // SCHEDULE_MANAGER_H

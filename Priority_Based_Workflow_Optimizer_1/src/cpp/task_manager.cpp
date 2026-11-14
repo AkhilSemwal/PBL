@@ -9,6 +9,7 @@
 #include "task.h"
 
 #include <cstdio>
+#include <fstream>
 #include <cstdlib>
 #include <cstring>
 
@@ -287,8 +288,8 @@ static const char* parse_task_fields(char** fields, TaskData* task)
 int tm_load_from_file(TaskManager* manager, const char* path, int* errorCount)
 {
     *errorCount = 0;
-    FILE* file = fopen(path, "r");
-    if (file == NULL) {
+    std::ifstream file(path);   // opens the file for reading
+    if (!file.is_open()) {
         printf("  [ERROR] Cannot open tasks file: %s\n", path);
         return -1;
     }
@@ -340,7 +341,7 @@ int tm_load_from_file(TaskManager* manager, const char* path, int* errorCount)
         loaded++;
     }
 
-    fclose(file);
+    file.close();   // (the destructor would also close it)
     return loaded;
 }
 
@@ -363,4 +364,100 @@ const char* tm_status_message(TaskManagerStatus status)
         return "out of memory";
     }
     return "unknown status";
+}
+
+// ============================== Phase 3 ==============================
+
+int tm_next_id(const TaskManager* manager)
+{
+    int largest = 0;
+    for (int index = 0; index < manager->count; index++) {
+        if (manager->tasks[index].id > largest) {
+            largest = manager->tasks[index].id;
+        }
+    }
+    return largest + 1;
+}
+
+TaskManagerStatus tm_update_task(TaskManager* manager, const TaskData* task)
+{
+    if (tm_validation_error(task) != NULL) {
+        return TM_ERR_INVALID;
+    }
+    int index = tm_find_index(manager, task->id);
+    if (index == -1) {
+        return TM_ERR_NOT_FOUND;
+    }
+    manager->tasks[index] = *task;   // the ID stays the same, everything else is replaced
+    return TM_OK;
+}
+
+TaskManagerStatus tm_delete_task(TaskManager* manager, int taskId)
+{
+    int index = tm_find_index(manager, taskId);
+    if (index == -1) {
+        return TM_ERR_NOT_FOUND;
+    }
+    // Is this task still a prerequisite of another task?
+    for (int other = 0; other < manager->count; other++) {
+        const TaskData* task = &manager->tasks[other];
+        for (int position = 0; position < task->prerequisiteCount; position++) {
+            if (task->prerequisiteIds[position] == taskId) {
+                return TM_ERR_HAS_DEPENDENTS;
+            }
+        }
+    }
+    // Slide the later tasks one place to the left to close the gap.
+    for (int later = index; later + 1 < manager->count; later++) {
+        manager->tasks[later] = manager->tasks[later + 1];
+    }
+    manager->count--;
+    return TM_OK;
+}
+
+TaskManagerStatus tm_mark_completed(TaskManager* manager, int taskId)
+{
+    int index = tm_find_index(manager, taskId);
+    if (index == -1) {
+        return TM_ERR_NOT_FOUND;
+    }
+    manager->tasks[index].isCompleted = 1;
+    return TM_OK;
+}
+
+// Writes all tasks to any output stream (a file, or std::cout to test).
+static void write_tasks(const TaskManager* manager, std::ostream& out)
+{
+    out << "# Pending work for the day.\n";
+    out << "# Format: ID|Name|Priority|DurationMinutes|LocationID|Prerequisites|Status\n";
+    out << "# Priority 1..10 (higher = more important). Duration 1..600 minutes.\n";
+    out << "# Prerequisites: - for none, or task IDs separated by commas (e.g. 1,4)\n";
+    out << "# Status: PENDING or DONE\n";
+
+    for (int index = 0; index < manager->count; index++) {
+        const TaskData* task = &manager->tasks[index];
+        out << task->id << '|' << task->name << '|' << task->priority << '|'
+            << task->durationMinutes << '|' << task->locationId << '|';
+        if (task->prerequisiteCount == 0) {
+            out << '-';
+        }
+        for (int position = 0; position < task->prerequisiteCount; position++) {
+            if (position > 0) {
+                out << ',';
+            }
+            out << task->prerequisiteIds[position];
+        }
+        out << '|' << (task->isCompleted ? "DONE" : "PENDING") << '\n';
+    }
+}
+
+int tm_save_to_file(const TaskManager* manager, const char* path)
+{
+    std::ofstream file(path);   // opens the file for writing (old content is replaced)
+    if (!file.is_open()) {
+        return 0;
+    }
+    write_tasks(manager, file);   // an ofstream is an ostream
+    file.close();
+    return file.fail() ? 0 : 1;
 }

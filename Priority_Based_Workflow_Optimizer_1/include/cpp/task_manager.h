@@ -5,7 +5,7 @@
  *
  * Stores every TaskData record in one dynamically allocated array
  * and provides load / validate / find / display.
- * (Phase 3 will add: update, delete, mark completed, save to file.)
+ * Phase 3 added: next ID, update, delete, mark completed, save to file.
  *
  * Task IDs: every task has a unique ID >= 1, taken from tasks.txt.
  * tm_add_task() rejects a duplicate ID, so two tasks can never share one.
@@ -72,7 +72,21 @@ int tm_load_from_file(TaskManager* manager, const char* path, int* errorCount);
 const char* tm_status_message(TaskManagerStatus status);
 
 
-/* Phase 3: tm_update_task(), tm_delete_task(), tm_mark_completed(),
-   tm_next_id() and tm_save_to_file() (edit tasks from the menu, Save Data). */
+/* ------------------------------ Phase 3 ------------------------------ */
+
+/* The smallest task ID that is not used yet (largest ID + 1). */
+int tm_next_id(const TaskManager* manager);
+
+/* Replaces the task that has the same ID as *task (checked like tm_add_task). */
+TaskManagerStatus tm_update_task(TaskManager* manager, const TaskData* task);
+
+/* Deletes a task. Refused (TM_ERR_HAS_DEPENDENTS) while another task needs it. */
+TaskManagerStatus tm_delete_task(TaskManager* manager, int taskId);
+
+/* Sets the status of a task to DONE. */
+TaskManagerStatus tm_mark_completed(TaskManager* manager, int taskId);
+
+/* Writes all tasks back to tasks.txt. Returns 1 on success, 0 if it cannot write. */
+int tm_save_to_file(const TaskManager* manager, const char* path);
 
 #endif /* TASK_MANAGER_H */
