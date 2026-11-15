@@ -348,44 +348,47 @@ The diagram shows **who calls or uses whom** (verified against the `#include` li
 ## 7. Project Folder Structure
 
 ```text
-Priority_Based_Workflow_Optimizer/
-├── README.md                 # this document
+PBL/                                      # repository root
+├── README.md                             # this document
+├── LICENSE                               # MIT license
 ├── docs/
-|   ├── architecture.md
-│   ├── dsa_design.md
-|   ├── oop_design.md
-│   └── images
-├── include/cpp/              # header files: what each module offers
-│   ├── task.h
-│   ├── heap.h
-│   ├── task_manager.h
-│   ├── schedule_manager.h
-│   ├── task_graph.h
-│   ├── location_graph.h
-│   ├── dijkstra.h
-│   ├── scheduler.h
-│   ├── optimizer.h
-│   ├── knapsack.h
-│   └── workflow_app.h
-├── src/
-│   ├── main.cpp              # program entry point
-│   └── cpp/                  # one .cpp file for each header above
-│       ├── task.cpp
-│       ├── heap.cpp
-│       ├── task_manager.cpp
-│       ├── schedule_manager.cpp
-│       ├── task_graph.cpp
-│       ├── location_graph.cpp
-│       ├── dijkstra.cpp
-│       ├── scheduler.cpp
-│       ├── optimizer.cpp
-│       ├── knapsack.cpp
-│       └── workflow_app.cpp
-└── data/
-    ├── tasks.txt             # pending tasks
-    ├── schedule.txt          # one day's timetable (CLASS and FREE periods)
-    ├── locations.txt         # campus buildings
-    └── routes.txt            # two-way walking paths with minutes
+│   ├── architecture.md                   # system architecture and data flow
+│   ├── dsa_design.md                     # data structures and algorithms
+│   ├── oop_design.md                     # classes and OOP concepts
+│   ├── dependencies.md                   # file dependencies and build order
+│   └── images/                           # diagram images used by this README
+└── Priority_Based_Workflow_Optimizer_1/  # the program (run all commands from here)
+    ├── include/cpp/                      # header files: what each module offers
+    │   ├── task.h
+    │   ├── heap.h
+    │   ├── task_manager.h
+    │   ├── schedule_manager.h
+    │   ├── task_graph.h
+    │   ├── location_graph.h
+    │   ├── dijkstra.h
+    │   ├── scheduler.h
+    │   ├── optimizer.h
+    │   ├── knapsack.h
+    │   └── workflow_app.h
+    ├── src/
+    │   ├── main.cpp                      # program entry point
+    │   └── cpp/                          # one .cpp file for each header above
+    │       ├── task.cpp
+    │       ├── heap.cpp
+    │       ├── task_manager.cpp
+    │       ├── schedule_manager.cpp
+    │       ├── task_graph.cpp
+    │       ├── location_graph.cpp
+    │       ├── dijkstra.cpp
+    │       ├── scheduler.cpp
+    │       ├── optimizer.cpp
+    │       ├── knapsack.cpp
+    │       └── workflow_app.cpp
+    └── data/
+        ├── tasks.txt                     # pending tasks
+        ├── schedule.txt                  # one day's timetable (CLASS and FREE periods)
+        ├── locations.txt                 # campus buildings
+        └── routes.txt                    # two-way walking paths with minutes
 ```
 
 ### Every module
@@ -510,10 +513,10 @@ There are no circular includes, and every header has an include guard. [`docs/de
 
 ```bash
 git clone https://github.com/AkhilSemwal/PBL.git
-cd PBL/<PROJECT_FOLDER>
+cd PBL/Priority_Based_Workflow_Optimizer_1
 ```
 
-Replace `<PROJECT_FOLDER>` with the folder that contains `src/`, `include/` and `data/`.
+`Priority_Based_Workflow_Optimizer_1` is the folder that contains `src/`, `include/` and `data/`.
 
 > **All commands below must be run from the project root** — the folder that contains `src/`, `include/` and `data/`. The program opens `data/tasks.txt` and the other files relative to the current working directory.
 
