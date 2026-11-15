@@ -351,7 +351,10 @@ The diagram shows **who calls or uses whom** (verified against the `#include` li
 Priority_Based_Workflow_Optimizer/
 ├── README.md                 # this document
 ├── docs/
-│   └── dependencies.md       # file dependencies
+|   ├── architecture.md
+│   ├── dsa_design.md
+|   ├── oop_design.md
+│   └── images
 ├── include/cpp/              # header files: what each module offers
 │   ├── task.h
 │   ├── heap.h
