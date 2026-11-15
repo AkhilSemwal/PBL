@@ -895,3 +895,9 @@ The project was split into two kinds of work:
 The Priority Based Workflow Optimizer turns a common student problem — wasted free periods — into a concrete planning task, and solves it with classic computer-science tools: a heap-based Dijkstra for walking times, graphs and DFS for dependencies, Kahn's algorithm for a valid task order, and two scheduling strategies (Greedy and 0/1 Knapsack DP) that can be compared on the same day.
 
 Its value lies in how the parts fit together: hand-written data structures in a procedural style form the base, and an object-oriented layer — an abstract `Scheduler` with two interchangeable planners, coordinated by `WorkflowApp` — turns them into a working application. The result is a practical demonstration of Data Structures, Algorithms and Object-Oriented Programming working together on a real time-utilisation problem.
+
+---
+
+## License
+
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
