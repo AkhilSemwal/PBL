@@ -1,22 +1,3 @@
-/*
- * workflow_app.h
- * Owner: Akhil (integration, console application)
- *
- * WorkflowApp owns every module object, loads the data files and shows the
- * console menu. It only COORDINATES: each algorithm lives in its own module.
- *
- * Main menu (0 = Exit). "Manage" options open a sub-menu (0 = Back).
- *   1 Manage Locations      4 Manage To-Do List     7 View Itinerary
- *   2 Manage Routes         5 View Schedule         8 Save Data
- *   3 Manage Fixed Schedule 6 Optimize My Day       9 Load Data
- *
- * Phase 3: the two planners (Greedy, 0/1 Knapsack) are used through a
- * Scheduler pointer, the chosen plan is kept in currentPlan, and every
- * list can be edited from the menu and saved back to data/.
- *
- * Data files are opened with paths relative to the project folder
- * (data/tasks.txt, ...), so the program must be started from that folder.
- */
 #ifndef WORKFLOW_APP_H
 #define WORKFLOW_APP_H
 
