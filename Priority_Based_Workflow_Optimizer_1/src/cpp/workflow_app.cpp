@@ -1,9 +1,3 @@
-/*
- * workflow_app.cpp
- * Owner: Akhil (integration, console application)
- *
- * Connects all modules and implements the console menu.
- */
 #include "workflow_app.h"
 #include "dijkstra.h"
 #include "task.h"
@@ -21,13 +15,13 @@ static const char* const SCHEDULE_FILE = "data/schedule.txt";
 static const char* const LOCATIONS_FILE = "data/locations.txt";
 static const char* const ROUTES_FILE = "data/routes.txt";
 
-/* Inside width of the menu boxes. */
+
 static const int BOX_WIDTH = 60;
 
-/* Size of the buffer for one line typed by the user. */
+
 static const int INPUT_BUFFER_SIZE = 128;
 
-/* ===================== construction / data ===================== */
+
 
 WorkflowApp::WorkflowApp()
     : taskObjects(nullptr),
@@ -112,13 +106,11 @@ void WorkflowApp::rebuildTaskGraph(bool reportProblems)
     tg_free(&taskGraph);
     tg_init(&taskGraph);
 
-    /* One vertex per task. */
     for (int index = 0; index < tm_count(&taskManager); index++) {
         const TaskData* task = tm_get_task_at(&taskManager, index);
         tg_add_task(&taskGraph, task->id, task->priority);
     }
 
-    /* One edge per prerequisite: prerequisite -> task. */
     for (int index = 0; index < tm_count(&taskManager); index++) {
         const TaskData* task = tm_get_task_at(&taskManager, index);
         for (int position = 0; position < task->prerequisiteCount; position++) {
@@ -156,7 +148,7 @@ bool WorkflowApp::rebuildTaskObjects()
 
 bool WorkflowApp::validateData()
 {
-    /* Prints a [WARN] line only when something is wrong. Returns true if all is fine. */
+    
     int problems = 0;
 
     for (int index = 0; index < tm_count(&taskManager); index++) {
@@ -215,7 +207,7 @@ bool WorkflowApp::readLine(const char* prompt, char* buffer, int bufferSize)
         return false;
     }
     if (std::cin.fail()) {
-        /* Line longer than the buffer: discard the rest and report it as empty. */
+       
         std::cin.clear();
         std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
         std::cout << "  Input too long.\n";
@@ -527,12 +519,7 @@ void WorkflowApp::manageTodo()
     }
 }
 
-/*
- * Lists pending tasks from most to least important.
- * Uses the Task class: operator> decides the order (higher priority, then
- * shorter, then lower ID) and operator<< prints each task.
- * Sorting: insertion sort on an array of indices (no std::sort).
- */
+
 void WorkflowApp::showTasksByPriority() const
 {
     if (taskObjectCount == 0) {

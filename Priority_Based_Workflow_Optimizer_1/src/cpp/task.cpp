@@ -1,8 +1,4 @@
-// task.cpp
-// Owner: Akhil
-//
-// Part 1: the text helpers (pu_...) that every file reader uses - C style.
-// Part 2: the code of the Task class - C++ / OOP.
+
 
 #include "task.h"
 
@@ -12,20 +8,18 @@
 #include <istream>
 #include <limits>     // std::numeric_limits for ignore()
 
-// ============================ Part 1: text helpers ============================
+
 
 int pu_read_line(std::istream& in, char* buffer, int bufferSize, int* lineTooLong)
 {
     *lineTooLong = 0;
     buffer[0] = '\0';
 
-    // getline reads up to the '\n' (and removes it) or until the buffer is full.
-    // It also works for the last line of a file that has no '\n' at the end.
+    
     if (in.getline(buffer, bufferSize)) {
         return 1;
     }
 
-    // Nothing was read and the stream is at its end: there are no more lines.
     if (in.gcount() == 0 && in.eof()) {
         return 0;
     }
@@ -33,9 +27,6 @@ int pu_read_line(std::istream& in, char* buffer, int bufferSize, int* lineTooLon
         return 0;   // a real read error
     }
 
-    // The buffer filled up before the '\n', so the line is too long.
-    // clear() removes the error state; ignore() throws away the rest of the
-    // line, so the next call starts at the beginning of the next line.
     *lineTooLong = 1;
     in.clear();
     in.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
@@ -100,8 +91,7 @@ int pu_split(char* line, char separator, char** fields, int maxFields)
     char* fieldStart = line;
     size_t index = 0;
 
-    // Walk along the line. Every separator (and the end of the line)
-    // closes one field: we put a '\0' there and remember where it started.
+
     while (1) {
         char current = line[index];
         if (current == separator || current == '\0') {
@@ -138,7 +128,6 @@ int pu_parse_int(const char* text, int* value)
         return 0;
     }
 
-    // Build the number digit by digit; anything that is not a digit is an error.
     while (text[index] != '\0') {
         char digit = text[index];
         if (digit < '0' || digit > '9') {

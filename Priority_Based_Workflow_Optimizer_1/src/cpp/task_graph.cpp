@@ -1,11 +1,4 @@
-/*
- * task_graph.c
- * Owner: Samriddhi
- *
- * Prerequisite graph: adjacency lists, DFS cycle detection and
- * Phase 3: prerequisite check for the planners and Kahn's topological sort.
- * Style: DS with C (structures, linked lists, pointers, functions)
- */
+
 #include "task_graph.h"
 #include "heap.h"   /* Phase 3: MAX_HEAP for Kahn's algorithm */
 
