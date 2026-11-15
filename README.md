@@ -4,7 +4,7 @@
 
 ![Language](https://img.shields.io/badge/language-C%2B%2B-00599C?logo=cplusplus&logoColor=white)
 ![Compiler](https://img.shields.io/badge/compiler-g%2B%2B-informational)
-![Status](https://img.shields.io/badge/status-%20completed-brightgreen)
+![Status](https://img.shields.io/badge/status-completed-brightgreen)
 ![Project](https://img.shields.io/badge/type-Academic%20PBL%20project-purple)
 
 A C++ console application built as a **Project-Based Learning (PBL)** project at Graphic Era Hill University by **Team Cloud9**.
@@ -207,9 +207,9 @@ So the task fits, with 20 more minutes left for other work on the way. The plann
 Phase 3 is the **final, integrated implementation**. Each phase built on the previous one.
 
 ```mermaid
-flowchart LR
-    P1["Phase 1<br/>Problem definition,<br/>design, first Greedy draft"] --> P2["Phase 2<br/>Data structures and<br/>core workflow management"]
-    P2 --> P3["Phase 3<br/>Schedulers, comparison,<br/>itinerary, editing, saving"]
+graph LR
+    P1["Phase 1: problem definition, design, first Greedy draft"] --> P2["Phase 2: data structures and core workflow"]
+    P2 --> P3["Phase 3: schedulers, comparison, itinerary, editing, saving"]
 ```
 
 ### Phase 1 — Initial Foundation
@@ -298,9 +298,9 @@ The DP table `best[i][w]` (size `(n + 1) × (W + 1)`, allocated with `new[]`) gi
 | Category | Used in this project |
 |---|---|
 | Programming language | C++ (data-structure modules written in a C-style procedural style: `struct`s, pointers, linked lists, `malloc`/`free`) |
-| C++ standard | **C++17** in the `Makefile` (`-std=c++17`); the code also compiles with **C++14** (`-std=c++14`), for older MinGW compilers |
+| C++ standard | **C++17** (`-std=c++17`); the code also compiles with **C++14** (`-std=c++14`), for older MinGW compilers |
 | Compiler | `g++` (GCC; MinGW-w64 on Windows) |
-| Build system | GNU `make` (`Makefile`), or a single `g++` command |
+| Build | A single `g++` command (no build tool needed) |
 | Standard library used | `<iostream>`, `<istream>`, `<fstream>`, `<cstdio>`, `<cstring>`, `<cstdlib>`, `<climits>`, `<limits>`, `<new>` — I/O and basic utilities only, **no STL containers or algorithms** |
 | Storage | Plain-text files in `data/`, fields separated by `|` |
 | Interface | Console menu (plain `+ - |` box characters, no colour codes) |
@@ -334,43 +334,43 @@ The program is organised in layers. Each module has a header (`include/cpp/*.h`,
 The diagram shows **who calls or uses whom** (verified against the `#include` lines and function calls in the source).
 
 ```mermaid
-flowchart TD
-    MAIN["main.cpp"] --> APP["WorkflowApp<br/>(workflow_app)"]
+graph TD
+    MAIN["main.cpp"] --> APP["WorkflowApp - workflow_app"]
 
-    subgraph DATA["data/ files"]
+    subgraph DATAFILES["data folder"]
         TXT1["tasks.txt"]
         TXT2["schedule.txt"]
         TXT3["locations.txt"]
         TXT4["routes.txt"]
     end
 
-    TXT1 <--> TM["TaskManager<br/>(task_manager)"]
-    TXT2 <--> SM["ScheduleManager<br/>(schedule_manager)"]
-    TXT3 <--> LG["LocationGraph<br/>(location_graph)"]
-    TXT4 <--> LG
+    TXT1 -->|load and save| TM["TaskManager - task_manager"]
+    TXT2 -->|load and save| SM["ScheduleManager - schedule_manager"]
+    TXT3 -->|load and save| LG["LocationGraph - location_graph"]
+    TXT4 -->|load and save| LG
 
     APP --> TM
     APP --> SM
     APP --> LG
-    APP -- "rebuilds from task prerequisites" --> TG["TaskGraph<br/>(task_graph)"]
+    APP -->|built from task prerequisites| TG["TaskGraph - task_graph"]
 
-    SM -- "heapSort()" --> HEAP["Heap / heapSort<br/>(heap)"]
-    TG -- "MAX_HEAP for Kahn's algorithm" --> HEAP
-    DJ["DijkstraSolver<br/>(dijkstra)"] -- "MIN_HEAP" --> HEAP
-    DJ -- "reads routes" --> LG
+    SM -->|heap sort of periods| HEAP["Heap and heapSort - heap"]
+    TG -->|max heap for Kahn| HEAP
+    DJ["DijkstraSolver - dijkstra"] -->|min heap| HEAP
+    DJ -->|reads routes| LG
 
-    APP -- "shortest route, itinerary walks" --> DJ
-    APP -- "makeSchedulingInput()" --> IN["SchedulingInput<br/>tasks, free slots, graph, map"]
-    IN --> SCH["Scheduler (abstract)<br/>plan() / planSlots()"]
-    SCH -- "walkMinutes()" --> DJ
-    SCH -- "tg_find_cycle(), tg_prerequisites_done()" --> TG
-    SCH --> GR["GreedyScheduler<br/>(optimizer)"]
-    SCH --> KN["KnapsackScheduler<br/>(knapsack)"]
+    APP -->|shortest route and itinerary walks| DJ
+    APP -->|makeSchedulingInput| IN["SchedulingInput: tasks, free slots, graph, map"]
+    IN --> SCH["Scheduler - abstract base class"]
+    SCH -->|walkMinutes| DJ
+    SCH -->|cycle and prerequisite checks| TG
+    SCH -->|implemented by| GR["GreedyScheduler - optimizer"]
+    SCH -->|implemented by| KN["KnapsackScheduler - knapsack"]
     GR --> RES["ScheduleResult"]
     KN --> RES
-    RES --> ITI["Comparison and<br/>Daily Itinerary (menu 6 / 7)"]
+    RES --> ITI["Comparison and daily itinerary - menu 6 and 7"]
 
-    TASK["task.h: TaskData, TimeSlot,<br/>Task class, text helpers"] -.-> TM
+    TASK["task.h: TaskData, TimeSlot, Task class, text helpers"] -.-> TM
     TASK -.-> SM
     TASK -.-> LG
     TASK -.-> TG
@@ -382,7 +382,7 @@ flowchart TD
 classDiagram
     class Scheduler {
         <<abstract>>
-        +name() text
+        +name() string
         +plan(input, result) bool
         #planSlots(input, result) bool
         #walkMinutes(map, fromId, toId) int
@@ -391,25 +391,25 @@ classDiagram
         #slotStartLocation(slot, lastLocationId) int
     }
     class GreedyScheduler {
-        +name() text
+        +name() string
         #planSlots(input, result) bool
     }
     class KnapsackScheduler {
-        +name() text
+        +name() string
         #planSlots(input, result) bool
     }
     class ScheduleResult {
-        -planned PlannedTask[]
-        -deferred DeferredTask[]
-        -slots SlotUsage[]
+        -planned
+        -deferred
+        -slots
         +addPlanned(item, priority) bool
         +getAchievedPriority() int
         +getPriorityPercent() double
     }
     class WorkflowApp {
-        -greedyPlanner GreedyScheduler
-        -knapsackPlanner KnapsackScheduler
-        -currentPlan ScheduleResult
+        -greedyPlanner
+        -knapsackPlanner
+        -currentPlan
         +initialize() bool
         +run() void
     }
@@ -515,27 +515,28 @@ All files use `|` between fields. Empty lines and lines starting with `#` are ig
 12. Edits mark the data as changed and clear the old plan; menu 8 (or the question on exit) writes all four files back to `data/`.
 
 ```mermaid
-flowchart TD
-    A["main(): WorkflowApp app"] --> B["initialize() -> loadAllData()"]
-    B --> C["locations.txt, routes.txt -> LocationGraph"]
-    B --> D["schedule.txt -> ScheduleManager<br/>heapSort + free slots"]
-    B --> E["tasks.txt -> TaskManager"]
-    C --> F["rebuildTaskGraph(), rebuildTaskObjects()"]
+graph TD
+    A["main creates WorkflowApp"] --> B["initialize calls loadAllData"]
+    B --> C["locations.txt and routes.txt into LocationGraph"]
+    B --> D["schedule.txt into ScheduleManager, heap sort, free slots"]
+    B --> E["tasks.txt into TaskManager"]
+    C --> F["rebuildTaskGraph and rebuildTaskObjects"]
     D --> F
     E --> F
-    F --> G["validateData(): locations exist, no cycle"]
-    G --> H["run(): main menu"]
-    H --> I["Optimize My Day (6)"]
-    I --> J["makeSchedulingInput()"]
-    J --> K["Scheduler::plan()"]
+    F --> G["validateData: locations exist, no cycle"]
+    G --> H["run: main menu"]
+    H --> I["Optimize My Day, menu 6"]
+    I --> J["makeSchedulingInput"]
+    J --> K["Scheduler plan"]
     K --> L{"Prerequisite cycle?"}
-    L -- yes --> M["Stop and show the cycle"]
-    L -- no --> N["planSlots(): Greedy or Knapsack"]
-    N --> O["walkMinutes() -> DijkstraSolver"]
-    N --> P["ScheduleResult + reasons"]
-    P --> Q["Summary / Comparison"]
-    Q --> R["View Itinerary (7)"]
-    H --> S["Edit data (1-4)"] --> T["Save Data (8) -> data/*.txt"]
+    L -->|yes| M["Stop and show the cycle"]
+    L -->|no| N["planSlots: Greedy or Knapsack"]
+    N --> O["walkMinutes uses DijkstraSolver"]
+    N --> P["ScheduleResult with reasons"]
+    P --> Q["Summary or comparison"]
+    Q --> R["View Itinerary, menu 7"]
+    H --> S["Edit data, menus 1 to 4"]
+    S --> T["Save Data, menu 8, writes data files"]
 ```
 
 ### Header dependencies (Phase 3)
@@ -601,7 +602,6 @@ There are no circular includes, and every header has an include guard. [`docs/de
 | Tool | Needed for | Check |
 |---|---|---|
 | `g++` with C++17 support (older compilers: use the `-std=c++14` command below) | Compiling | `g++ --version` |
-| `make` | Optional, for the `Makefile` | `make --version` |
 | Git | Optional, for cloning | `git --version` |
 
 ### Get the code
@@ -611,9 +611,9 @@ git clone https://github.com/AkhilSemwal/PBL.git
 cd PBL/<PROJECT_FOLDER>
 ```
 
-Replace `<PROJECT_FOLDER>` with the folder that contains `Makefile`, `src/`, `include/` and `data/`.
+Replace `<PROJECT_FOLDER>` with the folder that contains `src/`, `include/` and `data/`.
 
-> **All commands below must be run from the project root** — the folder that contains `Makefile`. The program opens `data/tasks.txt` and the other files relative to the current working directory.
+> **All commands below must be run from the project root** — the folder that contains `src/`, `include/` and `data/`. The program opens `data/tasks.txt` and the other files relative to the current working directory.
 
 ### Windows (MinGW g++, Command Prompt or PowerShell)
 
@@ -634,13 +634,15 @@ Replace `<PROJECT_FOLDER>` with the folder that contains `Makefile`, `src/`, `in
 
 ### Linux / WSL / macOS (with g++)
 
-```bash
-make        # compile every module into build/ and link bin/priority_workflow_optimizer
-make run    # build if needed, then start the program
-make clean  # delete build/ and bin/
-```
-
-The `Makefile` uses `g++ -std=c++17 -Wall -Wextra -pedantic -Iinclude/cpp` and recompiles only files that changed. It uses `mkdir -p` and `rm -rf`, so on Windows it needs a Unix-like shell (MSYS2, Git Bash or WSL); otherwise use the one-line `g++` command above.
+1. Compile (one line):
+   ```bash
+   g++ -std=c++17 -Wall -Wextra -pedantic -Iinclude/cpp src/cpp/task.cpp src/cpp/heap.cpp src/cpp/task_manager.cpp src/cpp/schedule_manager.cpp src/cpp/task_graph.cpp src/cpp/location_graph.cpp src/cpp/dijkstra.cpp src/cpp/scheduler.cpp src/cpp/optimizer.cpp src/cpp/knapsack.cpp src/cpp/workflow_app.cpp src/main.cpp -o priority_workflow_optimizer
+   ```
+   With an older compiler, use `-std=c++14` instead.
+2. Run:
+   ```bash
+   ./priority_workflow_optimizer
+   ```
 
 ### The `data/` directory
 
@@ -660,7 +662,6 @@ If the files are missing, the program still starts and prints `[ERROR] Cannot op
 | Problem | Cause and fix |
 |---|---|
 | `'g++' is not recognized` | The compiler is not installed or not on `PATH`. Install MinGW-w64 (or MSYS2) and add its `bin` folder to `PATH`, then open a new terminal. |
-| `make: command not found` | `make` is not installed. Install it (Linux: `sudo apt install make`; Windows: MSYS2 `mingw32-make` or WSL), or use the one-line `g++` command. |
 | `fatal error: workflow_app.h: No such file or directory` | The `-Iinclude/cpp` option is missing, or `g++` was run from inside `src/`. Run the full command from the project root. |
 | `undefined reference to ...` | A `.cpp` file is missing from the command. Copy the command above exactly (12 source files). |
 | `unrecognized command-line option '-std=c++17'` | Old compiler: use `-std=c++14`. |
@@ -836,7 +837,7 @@ Each walking time is a fresh Dijkstra run (no caching). With the project's limit
 
 The following checks were run on the Phase 3 code in this folder (without changing any source or data file; edits were tested on a copy):
 
-- Build with `make` (`-std=c++17 -Wall -Wextra -pedantic`): **no errors or warnings**.
+- Build with the one-line command using `-std=c++17 -Wall -Wextra -pedantic`: **no errors or warnings**.
 - Build with the one-line command using `-std=c++14`: **no errors or warnings**.
 - Smoke test with AddressSanitizer and UndefinedBehaviorSanitizer: start-up, timetable and free slots, pending tasks by priority, Kahn's order, Greedy, Knapsack, Compare, View Itinerary, adding a task, refusing to delete a task another task needs, Save and Load Data — **no memory errors reported**.
 - Error handling: a missing `data/` folder (an `[ERROR]` line per file, no crash) and a task with priority 11 (reported with its line number and skipped).
@@ -883,7 +884,7 @@ The project was split into two kinds of work:
 
 | Member | Phase 2 work | Phase 3 work | DS (C-style) focus | OOP (C++) focus |
 |---|---|---|---|---|
-| **Akhil Semwal** (team lead) | `task.h/.cpp`, `heap.h/.cpp`, `workflow_app.h/.cpp`, `main.cpp`, `Makefile`, README | `workflow_app`: Optimize My Day, Compare, View Itinerary, editing menus, Save Data, save-on-exit | `TaskData` / `TimeSlot`, text helpers, heap array logic, heap sort | `Heap` class (copying disabled), `Task` class (encapsulation, operator overloading), `WorkflowApp` (composition, integration) |
+| **Akhil Semwal** (team lead) | `task.h/.cpp`, `heap.h/.cpp`, `workflow_app.h/.cpp`, `main.cpp`, README | `workflow_app`: Optimize My Day, Compare, View Itinerary, editing menus, Save Data, save-on-exit | `TaskData` / `TimeSlot`, text helpers, heap array logic, heap sort | `Heap` class (copying disabled), `Task` class (encapsulation, operator overloading), `WorkflowApp` (composition, integration) |
 | **Priyanshu Gairola** | `dijkstra.h/.cpp` | `scheduler.h/.cpp` (`ScheduleResult`, abstract `Scheduler`, shared planning rules); `optimizer.h/.cpp` (`GreedyScheduler`) | Dijkstra: distance and predecessor arrays, min-heap, relaxation, lazy deletion; Greedy selection | `DijkstraSolver` class; abstract base class with pure virtual functions; inheritance and overriding in `GreedyScheduler` |
 | **Piyush Bisht** | `task_manager.h/.cpp`, `schedule_manager.h/.cpp`, `data/tasks.txt`, `data/schedule.txt` | `knapsack.h/.cpp` (`KnapsackScheduler`); task update / delete / mark done / save; period delete / save | Dynamic array of structures, validation, overlap check, free-slot building, 0/1 Knapsack DP table | `KnapsackScheduler` (inherits `Scheduler`, overrides `planSlots()`) |
 | **Samriddhi Saraswat** | `task_graph.h/.cpp`, `location_graph.h/.cpp`, `data/locations.txt`, `data/routes.txt` | `tg_prerequisites_done()`, `tg_topological_sort()` (Kahn's algorithm with a max-heap); route removal, next free ID, saving locations and routes | Directed and undirected graphs with linked lists, DFS cycle detection, Kahn's algorithm | Her graph modules are used by the `DijkstraSolver`, `Scheduler` and `WorkflowApp` classes |
