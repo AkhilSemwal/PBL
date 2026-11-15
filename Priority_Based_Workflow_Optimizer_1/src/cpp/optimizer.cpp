@@ -82,5 +82,3 @@ bool GreedyScheduler::planSlots(const SchedulingInput& input, ScheduleResult& re
     }
     return true;
 }
-
-}
