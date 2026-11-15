@@ -206,11 +206,7 @@ So the task fits, with 20 more minutes left for other work on the way. The plann
 
 Phase 3 is the **final, integrated implementation**. Each phase built on the previous one.
 
-```mermaid
-graph LR
-    P1["Phase 1: problem definition, design, first Greedy draft"] --> P2["Phase 2: data structures and core workflow"]
-    P2 --> P3["Phase 3: schedulers, comparison, itinerary, editing, saving"]
-```
+![Development phases: Phase 1, Phase 2, Phase 3](docs/images/development_phases.png)
 
 ### Phase 1 — Initial Foundation
 
@@ -329,72 +325,16 @@ The program is organised in layers. Each module has a header (`include/cpp/*.h`,
 
 ---
 
----
- 
 ## 6. Architecture Diagram
- 
+
 The diagram shows **who calls or uses whom** (verified against the `#include` lines and function calls in the source).
- 
-```mermaid
-graph TD
-    MAIN["main.cpp"] --> APP["WorkflowApp - workflow_app"]
- 
-    subgraph DATAFILES["data folder"]
-        TXT1["tasks.txt"]
-        TXT2["schedule.txt"]
-        TXT3["locations.txt"]
-        TXT4["routes.txt"]
-    end
- 
-    TXT1 -->|load and save| TM["TaskManager - task_manager"]
-    TXT2 -->|load and save| SM["ScheduleManager - schedule_manager"]
-    TXT3 -->|load and save| LG["LocationGraph - location_graph"]
-    TXT4 -->|load and save| LG
- 
-    APP --> TM
-    APP --> SM
-    APP --> LG
-    APP -->|built from task prerequisites| TG["TaskGraph - task_graph"]
- 
-    SM -->|heap sort of periods| HEAP["Heap and heapSort - heap"]
-    TG -->|max heap for Kahn| HEAP
-    DJ["DijkstraSolver - dijkstra"] -->|min heap| HEAP
-    DJ -->|reads routes| LG
- 
-    APP -->|shortest route and itinerary walks| DJ
-    APP -->|makeSchedulingInput| IN["SchedulingInput: tasks, free slots, graph, map"]
-    IN --> SCH["Scheduler - abstract base class"]
-    SCH -->|walkMinutes| DJ
-    SCH -->|cycle and prerequisite checks| TG
-    SCH -->|implemented by| GR["GreedyScheduler - optimizer"]
-    SCH -->|implemented by| KN["KnapsackScheduler - knapsack"]
-    GR --> RES["ScheduleResult"]
-    KN --> RES
-    RES --> ITI["Comparison and daily itinerary - menu 6 and 7"]
- 
-    TASK["task.h: TaskData, TimeSlot, Task class, text helpers"] -.-> TM
-    TASK -.-> SM
-    TASK -.-> LG
-    TASK -.-> TG
-```
- 
+
+![Architecture diagram: who calls or uses whom](docs/images/architecture.png)
+
 **Class relationships of the planning layer:**
- 
-```mermaid
-graph TD
-    SCH["Scheduler - abstract base class"]
-    GR["GreedyScheduler - optimizer"]
-    KN["KnapsackScheduler - knapsack"]
-    RES["ScheduleResult - the plan"]
-    APP["WorkflowApp - application"]
-    GR -->|inherits| SCH
-    KN -->|inherits| SCH
-    SCH -->|plan fills| RES
-    APP -->|owns| GR
-    APP -->|owns| KN
-    APP -->|keeps current plan| RES
-```
- 
+
+![Class relationships of the planning layer](docs/images/class_relationships.png)
+
 | Class | Kind | Key members |
 |---|---|---|
 | `Scheduler` | Abstract base class | Public: `name()` (pure virtual), `plan()`. Protected: `planSlots()` (pure virtual) and the static helpers `walkMinutes()`, `isPending()`, `prerequisitesReady()`, `slotStartLocation()`. Virtual destructor. |
@@ -402,7 +342,7 @@ graph TD
 | `KnapsackScheduler` | Derived from `Scheduler` | Overrides `name()` and `planSlots()` |
 | `ScheduleResult` | Class | Private fixed arrays of `PlannedTask`, `DeferredTask` and `SlotUsage`; `addPlanned()`, `addDeferred()`, `addSlot()`, `getAchievedPriority()`, `getPriorityPercent()` and other getters |
 | `WorkflowApp` | Class | Owns `greedyPlanner`, `knapsackPlanner` and `currentPlan`; `initialize()`, `run()` |
- 
+
 ---
 
 ## 7. Project Folder Structure
@@ -496,30 +436,7 @@ All files use `|` between fields. Empty lines and lines starting with `#` are ig
 11. `WorkflowApp` prints the plan or the comparison, keeps the chosen plan, and `showItinerary()` prints the timeline (walk routes from `DijkstraSolver::findPath()`).
 12. Edits mark the data as changed and clear the old plan; menu 8 (or the question on exit) writes all four files back to `data/`.
 
-```mermaid
-graph TD
-    A["main creates WorkflowApp"] --> B["initialize calls loadAllData"]
-    B --> C["locations.txt and routes.txt into LocationGraph"]
-    B --> D["schedule.txt into ScheduleManager, heap sort, free slots"]
-    B --> E["tasks.txt into TaskManager"]
-    C --> F["rebuildTaskGraph and rebuildTaskObjects"]
-    D --> F
-    E --> F
-    F --> G["validateData: locations exist, no cycle"]
-    G --> H["run: main menu"]
-    H --> I["Optimize My Day, menu 6"]
-    I --> J["makeSchedulingInput"]
-    J --> K["Scheduler plan"]
-    K --> L{"Prerequisite cycle?"}
-    L -->|yes| M["Stop and show the cycle"]
-    L -->|no| N["planSlots: Greedy or Knapsack"]
-    N --> O["walkMinutes uses DijkstraSolver"]
-    N --> P["ScheduleResult with reasons"]
-    P --> Q["Summary or comparison"]
-    Q --> R["View Itinerary, menu 7"]
-    H --> S["Edit data, menus 1 to 4"]
-    S --> T["Save Data, menu 8, writes data files"]
-```
+![Data flow from start-up to saving](docs/images/data_flow.png)
 
 ### Header dependencies (Phase 3)
 
