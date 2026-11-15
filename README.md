@@ -329,36 +329,38 @@ The program is organised in layers. Each module has a header (`include/cpp/*.h`,
 
 ---
 
+---
+ 
 ## 6. Architecture Diagram
-
+ 
 The diagram shows **who calls or uses whom** (verified against the `#include` lines and function calls in the source).
-
+ 
 ```mermaid
 graph TD
     MAIN["main.cpp"] --> APP["WorkflowApp - workflow_app"]
-
+ 
     subgraph DATAFILES["data folder"]
         TXT1["tasks.txt"]
         TXT2["schedule.txt"]
         TXT3["locations.txt"]
         TXT4["routes.txt"]
     end
-
+ 
     TXT1 -->|load and save| TM["TaskManager - task_manager"]
     TXT2 -->|load and save| SM["ScheduleManager - schedule_manager"]
     TXT3 -->|load and save| LG["LocationGraph - location_graph"]
     TXT4 -->|load and save| LG
-
+ 
     APP --> TM
     APP --> SM
     APP --> LG
     APP -->|built from task prerequisites| TG["TaskGraph - task_graph"]
-
+ 
     SM -->|heap sort of periods| HEAP["Heap and heapSort - heap"]
     TG -->|max heap for Kahn| HEAP
     DJ["DijkstraSolver - dijkstra"] -->|min heap| HEAP
     DJ -->|reads routes| LG
-
+ 
     APP -->|shortest route and itinerary walks| DJ
     APP -->|makeSchedulingInput| IN["SchedulingInput: tasks, free slots, graph, map"]
     IN --> SCH["Scheduler - abstract base class"]
@@ -369,58 +371,38 @@ graph TD
     GR --> RES["ScheduleResult"]
     KN --> RES
     RES --> ITI["Comparison and daily itinerary - menu 6 and 7"]
-
+ 
     TASK["task.h: TaskData, TimeSlot, Task class, text helpers"] -.-> TM
     TASK -.-> SM
     TASK -.-> LG
     TASK -.-> TG
 ```
-
+ 
 **Class relationships of the planning layer:**
-
+ 
 ```mermaid
-classDiagram
-    class Scheduler {
-        <<abstract>>
-        +name() string
-        +plan(input, result) bool
-        #planSlots(input, result) bool
-        #walkMinutes(map, fromId, toId) int
-        #isPending(task, result) bool
-        #prerequisitesReady(input, taskId, result) bool
-        #slotStartLocation(slot, lastLocationId) int
-    }
-    class GreedyScheduler {
-        +name() string
-        #planSlots(input, result) bool
-    }
-    class KnapsackScheduler {
-        +name() string
-        #planSlots(input, result) bool
-    }
-    class ScheduleResult {
-        -planned
-        -deferred
-        -slots
-        +addPlanned(item, priority) bool
-        +getAchievedPriority() int
-        +getPriorityPercent() double
-    }
-    class WorkflowApp {
-        -greedyPlanner
-        -knapsackPlanner
-        -currentPlan
-        +initialize() bool
-        +run() void
-    }
-    Scheduler <|-- GreedyScheduler
-    Scheduler <|-- KnapsackScheduler
-    Scheduler ..> ScheduleResult : fills
-    WorkflowApp *-- GreedyScheduler
-    WorkflowApp *-- KnapsackScheduler
-    WorkflowApp *-- ScheduleResult
+graph TD
+    SCH["Scheduler - abstract base class"]
+    GR["GreedyScheduler - optimizer"]
+    KN["KnapsackScheduler - knapsack"]
+    RES["ScheduleResult - the plan"]
+    APP["WorkflowApp - application"]
+    GR -->|inherits| SCH
+    KN -->|inherits| SCH
+    SCH -->|plan fills| RES
+    APP -->|owns| GR
+    APP -->|owns| KN
+    APP -->|keeps current plan| RES
 ```
-
+ 
+| Class | Kind | Key members |
+|---|---|---|
+| `Scheduler` | Abstract base class | Public: `name()` (pure virtual), `plan()`. Protected: `planSlots()` (pure virtual) and the static helpers `walkMinutes()`, `isPending()`, `prerequisitesReady()`, `slotStartLocation()`. Virtual destructor. |
+| `GreedyScheduler` | Derived from `Scheduler` | Overrides `name()` and `planSlots()` |
+| `KnapsackScheduler` | Derived from `Scheduler` | Overrides `name()` and `planSlots()` |
+| `ScheduleResult` | Class | Private fixed arrays of `PlannedTask`, `DeferredTask` and `SlotUsage`; `addPlanned()`, `addDeferred()`, `addSlot()`, `getAchievedPriority()`, `getPriorityPercent()` and other getters |
+| `WorkflowApp` | Class | Owns `greedyPlanner`, `knapsackPlanner` and `currentPlan`; `initialize()`, `run()` |
+ 
 ---
 
 ## 7. Project Folder Structure
