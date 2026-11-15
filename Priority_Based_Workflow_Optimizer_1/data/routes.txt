@@ -1,8 +1,7 @@
-# Dummy Routes
-# Walking routes (two-way).Time in minutes, must be 0 or more.
+# Walking routes (two-way). Time in minutes, must be 0 or more.
 # Format: FromLocationID|ToLocationID|WalkingMinutes
-# e.g. Department -> Computer Lab directly takes 12 min,
-# but Department -> Library -> Computer Lab takes only 5 + 4 = 9 min. <--Best Path as it takes less time
+# Department -> Computer Lab directly takes 12 min,
+# but Department -> Library -> Computer Lab takes only 5 + 4 = 9 min.
 # Research Block (8) has no footpath yet, so it cannot be reached.
 1|2|5
 1|3|7
