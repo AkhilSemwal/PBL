@@ -1,20 +1,4 @@
-/*
- * task.h
- * Owner: Akhil (common data model)
- *
- * This is the ONE place where the project's shared data types are defined.
- * Every other module includes this file instead of making its own copy.
- *
- * Part 1 (DS with C style) : constants, two plain structures (TaskData,
- *                            TimeSlot) and small text helpers (pu_...)
- *                            used by every file loader.
- * Part 2 (OOP with C++)    : the Task class.
- *
- * Phase 3: the plan result types (PlannedTask, SlotUsage, DeferredTask,
- * ScheduleResult), SchedulingInput and the abstract base class Scheduler
- * are in scheduler.h. They need the task graph and Dijkstra, and this file
- * must stay the lowest one that every other file includes.
- */
+
 #ifndef TASK_H
 #define TASK_H
 
@@ -54,18 +38,7 @@ typedef struct TaskData {
     int isCompleted;                          /* 1 = already done, 0 = pending  */
 } TaskData;
 
-/*
- * One FREE period of the timetable, given to the schedulers.
- * All times are "minutes since midnight", e.g. 09:30 -> 570.
- *
- * fromLocationId: location of the CLASS right before this free period.
- *                 NO_LOCATION if the period before it was also free (or the
- *                 day starts with it). Then the scheduler uses the place where
- *                 the student finished the previous free period.
- * toLocationId:   location of the CLASS right after this free period.
- *                 NO_LOCATION if the next period is also free (or the day
- *                 ends), so no walk to a class is needed inside this slot.
- */
+ 
 typedef struct TimeSlot {
     int slotId;                               /* 1, 2, 3 ... in time order      */
     int startMinute;
@@ -87,11 +60,7 @@ typedef struct TimeSlot {
 /* Field separator used in every data file. */
 #define FIELD_SEPARATOR '|'
 
-/*
- * Reads one line from an input stream into buffer (newline removed).
- * The loaders pass a std::ifstream; it works with any std::istream.
- * Returns 1 if a line was read, 0 at end of file.
- * If the line did not fit, the rest of it is skipped and *lineTooLong = 1.
+
  */
 int pu_read_line(std::istream& in, char* buffer, int bufferSize, int* lineTooLong);
 
@@ -130,13 +99,7 @@ int pu_equals_ignore_case(const char* first, const char* second);
 
 #include <iostream>
 
-/*
- * Task - an object-oriented, read-only view of one TaskData record.
- *
- * Encapsulation: the record is private. Other classes can read it through
- * getters but cannot change it. Changes (add, update, complete, delete)
- * always go through TaskManager, which validates them first.
- */
+
 class Task {
 public:
     Task();
